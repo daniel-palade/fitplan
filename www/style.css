@@ -7,6 +7,7 @@
   --text: #f4f6ff;
   --muted: #8b91ad;
   --accent: #00e5ff;
+  --accent-2: #00b8d4;
   --green: #39ff14;
   --amber: #ffd60a;
   --red: #ff2e63;
@@ -126,7 +127,7 @@ button {
 }
 button:active { transform: scale(0.97); }
 button.primary {
-  background: linear-gradient(135deg, #00e5ff, #00b8d4);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #04121a;
   box-shadow: 0 0 18px var(--glow-cyan);
 }
@@ -166,7 +167,7 @@ input, select {
 input:focus, select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(0,229,255,0.25);
+  box-shadow: 0 0 10px var(--glow-cyan);
 }
 label { font-size: 13px; color: var(--muted); }
 .hint { font-size: 12px; color: var(--muted); margin: -8px 0 12px; }
@@ -367,3 +368,36 @@ nav button.active {
 }
 .ex-rename:active { transform: none; }
 .dl { color: var(--gold); font-weight: 700; }
+
+/* ===== Tema feminina (roz neon + mov) ===== */
+body.theme-f {
+  --accent: #ff2d95;
+  --accent-2: #e01b7d;
+  --proto: #ff2d95;
+  --carbo: #c77dff;
+  --glow-cyan: rgba(255,45,149,0.45);
+}
+
+/* ===== Pasi cheie API ===== */
+.key-help {
+  background: rgba(177,44,255,0.08);
+  border: 1px solid rgba(177,44,255,0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.key-help b { color: var(--accent); }
+.key-help .step-num {
+  display: inline-block;
+  background: var(--card2);
+  color: var(--gold);
+  font-weight: 700;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  text-align: center;
+  line-height: 20px;
+  font-size: 11px;
+  margin-right: 6px;
+}

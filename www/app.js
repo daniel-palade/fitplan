@@ -420,6 +420,7 @@ function lastSet(name) {
 function showApp() {
   document.getElementById('setup-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  applyTheme();
   renderAll();
 }
 function showSetup() {
@@ -432,6 +433,12 @@ function renderAll() {
 }
 function renderDate() {
   document.getElementById('today-date').textContent = DOW[new Date().getDay()] + ' · ' + new Date().toLocaleDateString('ro-RO');
+}
+
+// Tema in functie de sex (fata = roz neon + mov)
+function applyTheme() {
+  const p = getProfile();
+  document.body.classList.toggle('theme-f', !!(p && p.sex === 'f'));
 }
 
 // Calendar periodizare (Sală)
@@ -817,6 +824,15 @@ document.getElementById('btn-fast-plan').addEventListener('click', () => {
   document.getElementById('fast-plan').classList.toggle('hidden');
 });
 
+document.getElementById('btn-key-help').addEventListener('click', () => {
+  document.getElementById('key-help').classList.toggle('hidden');
+});
+
+// Preview tema cand selectezi sexul in setup
+document.getElementById('in-sex').addEventListener('change', () => {
+  document.body.classList.toggle('theme-f', document.getElementById('in-sex').value === 'f');
+});
+
 // Navigare tab-uri
 document.querySelectorAll('nav button').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -865,5 +881,6 @@ function ensureProfileFields() {
 }
 renderDate();
 ensureProfileFields();
+applyTheme();
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}); }
 if (getProfile()) showApp(); else showSetup();
