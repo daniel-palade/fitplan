@@ -564,4 +564,5 @@ document.addEventListener('click', (ev) => {
 
 // init
 renderDate();
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}); }
 if (getProfile()) showApp(); else showSetup();
