@@ -13,11 +13,22 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Animația de deschidere -->
+  <div id="splash">
+    <img src="icons/icon-192.png" class="splash-logo" alt="FitPlan" />
+    <div class="splash-title">FitPlan</div>
+    <div class="splash-sub">Antrenorul tău personal cu AI 💪</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  </div>
+
   <!-- Ecran de configurare (prima pornire) -->
   <div id="setup-screen" class="screen">
     <div class="setup-card">
       <h1>FitPlan 💪</h1>
       <p class="subtitle">Configurează-ți profilul ca să-ți calculăm planul corect.</p>
+
+      <label>Numele tău</label>
+      <input id="in-name" type="text" placeholder="ex: Daniel / Ana" />
 
       <label>Înălțime (cm)</label>
       <input id="in-height" type="number" inputmode="numeric" value="186" />
@@ -77,6 +88,7 @@
       <!-- TAB: AZI -->
       <section id="tab-today" class="tab active">
         <div class="card">
+          <div id="greet-line" class="greet"></div>
           <h2>Azi <span id="remaining-total" class="pill"></span></h2>
           <div class="macro">
             <div class="macro-row"><span>Calorii</span><span id="cal-line"></span></div>
@@ -145,6 +157,34 @@
         </div>
       </section>
 
+      <!-- TAB: CHAT -->
+      <section id="tab-chat" class="tab">
+        <div id="chat-lobby" class="card">
+          <h2>💬 Chat Antrenor ↔ Elev</h2>
+          <label>Numele tău în chat</label>
+          <input id="chat-name" type="text" placeholder="ex: Daniel / Ana" />
+          <button id="btn-chat-create" class="primary">➕ Creează cameră (Antrenor)</button>
+          <button id="btn-chat-show-join" class="secondary">🔑 Intră cu cod (Elev)</button>
+          <div id="chat-join-box" class="hidden">
+            <input id="chat-code" type="text" placeholder="cod primit (ex: fp-x7k2q9)" />
+            <button id="btn-chat-join" class="primary">Intră în cameră</button>
+          </div>
+          <div id="chat-rooms" class="chat-rooms"></div>
+          <p class="hint">Antrenorul creează o cameră comună și camere private pentru fiecare elev. Elevii intră cu codul primit.</p>
+        </div>
+        <div id="chat-room" class="card hidden">
+          <div class="chat-head">
+            <div><b id="chat-room-title">Cameră</b><div id="chat-code-label" class="meal-meta"></div></div>
+            <button id="btn-chat-leave" class="danger">Ieși</button>
+          </div>
+          <div id="chat-msgs" class="chat-msgs"></div>
+          <div class="inline-form">
+            <input id="chat-input" type="text" placeholder="Scrie un mesaj..." />
+            <button id="btn-chat-send" class="primary">➤</button>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB: SETARI -->
       <section id="tab-settings" class="tab">
         <div class="card">
@@ -161,6 +201,7 @@
       <button data-tab="meals">Mâncare</button>
       <button data-tab="training">Sală</button>
       <button data-tab="progress">Progres</button>
+      <button data-tab="chat">Chat</button>
       <button data-tab="settings">Setări</button>
     </nav>
   </div>

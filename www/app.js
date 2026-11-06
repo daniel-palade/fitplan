@@ -429,7 +429,7 @@ function showSetup() {
 }
 function renderAll() {
   renderToday(); renderMeals(); renderTraining(); renderProgress(); renderProfile();
-  renderTrainCalendar(); renderFastCalendar();
+  renderTrainCalendar(); renderFastCalendar(); renderChat();
 }
 function renderDate() {
   document.getElementById('today-date').textContent = DOW[new Date().getDay()] + ' · ' + new Date().toLocaleDateString('ro-RO');
@@ -508,6 +508,12 @@ function renderToday() {
   const t = computeTargets(p);
   const tot = todayTotals();
   const rem = t.target - tot.c;
+  // salut personalizat + zile consecutive
+  const stk = store.get('streak', { last: null, count: 0 });
+  const hr = new Date().getHours();
+  const hello = hr < 12 ? 'Bună dimineața' : (hr < 18 ? 'Bună ziua' : 'Bună seara');
+  document.getElementById('greet-line').innerHTML =
+    `${hello}, ${esc(p.name || 'campion')}! 👋 <span class="streak">🔥 ${stk.count} ${stk.count === 1 ? 'zi' : 'zile'} la rând</span>`;
   document.getElementById('remaining-total').textContent =
     (rem >= 0 ? rem + ' kcal rămase' : (Math.abs(rem) + ' kcal peste'));
   const line = (cur, target, unit) => `${round1(cur)} / ${round1(target)}${unit}`;
@@ -737,6 +743,7 @@ document.getElementById('btn-setup').addEventListener('click', () => {
   if (!apikey) { toast('Introdu cheia API Gemini'); return; }
   const old = getProfile();
   const p = {
+    name: document.getElementById('in-name').value.trim() || 'Campion',
     height: parseFloat(document.getElementById('in-height').value) || 186,
     weight: parseFloat(document.getElementById('in-weight').value) || 98,
     age: parseInt(document.getElementById('in-age').value) || 27,
@@ -801,6 +808,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 
 document.getElementById('btn-edit-profile').addEventListener('click', () => {
   const p = getProfile();
+  document.getElementById('in-name').value = p.name || '';
   document.getElementById('in-height').value = p.height;
   document.getElementById('in-weight').value = p.weight;
   document.getElementById('in-age').value = p.age;
@@ -857,6 +865,14 @@ document.addEventListener('click', (ev) => {
     }
     return;
   }
+  const chatRow = ev.target.closest('.chat-room-row');
+  if (chatRow) {
+    const c = getChat();
+    c.active = chatRow.dataset.code;
+    setChat(c);
+    renderChat();
+    return;
+  }
   const addBtn = ev.target.closest('.log-add');
   if (addBtn) {
     const log = addBtn.closest('.ex-log');
@@ -870,6 +886,158 @@ document.addEventListener('click', (ev) => {
   }
 });
 
+// ===== Zile consecutive (streak) =====
+function updateStreak() {
+  const s = store.get('streak', { last: null, count: 0 });
+  const t = todayKey();
+  if (s.last === t) return;
+  if (s.last === addDays(t, -1)) s.count += 1; else s.count = 1;
+  s.last = t;
+  store.set('streak', s);
+}
+
+// ===== Splash (animația de deschidere) =====
+function hideSplash() {
+  const s = document.getElementById('splash');
+  if (!s || s.classList.contains('gone')) return;
+  s.classList.add('gone');
+  setTimeout(() => s.classList.add('hidden'), 600);
+}
+document.getElementById('splash').addEventListener('click', hideSplash);
+
+// ===== Chat Antrenor <-> Elev (textdb.dev, gratuit) =====
+const CHAT_URL = (code) => `https://textdb.dev/api/data/${code}`;
+
+function getChat() { return store.get('chat', { name: '', rooms: [], active: null }); }
+function setChat(c) { store.set('chat', c); }
+let chatTimer = null;
+
+function randCode() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let s = 'fp-';
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+function chatCreate() {
+  const c = getChat();
+  const name = document.getElementById('chat-name').value.trim();
+  if (name) c.name = name;
+  if (!c.name) { toast('Scrie mai întâi numele tău'); return; }
+  const title = prompt('Numele camerei (ex: Camera comună / Privat — Ana):', 'Camera comună');
+  if (!title || !title.trim()) return;
+  const code = randCode();
+  const body = JSON.stringify({ title: title.trim(), msgs: [] });
+  fetch(CHAT_URL(code), { method: 'POST', body: body }).then(r => {
+    if (!r.ok) throw new Error('eroare');
+    c.rooms.push({ code: code, title: title.trim() });
+    c.active = code;
+    setChat(c);
+    renderChat();
+    toast('Cameră creată! Cod: ' + code);
+  }).catch(() => toast('Nu am putut crea camera, încearcă din nou'));
+}
+
+function chatJoin() {
+  const c = getChat();
+  const name = document.getElementById('chat-name').value.trim();
+  if (name) c.name = name;
+  if (!c.name) { toast('Scrie mai întâi numele tău'); return; }
+  const code = document.getElementById('chat-code').value.trim().toLowerCase();
+  if (!code) { toast('Introdu codul camerei'); return; }
+  fetch(CHAT_URL(code)).then(r => r.text()).then(txt => {
+    if (!txt || !txt.trim()) throw new Error('gol');
+    const data = JSON.parse(txt);
+    if (!c.rooms.find(r => r.code === code)) c.rooms.push({ code: code, title: data.title || 'Cameră' });
+    c.active = code;
+    setChat(c);
+    renderChat();
+    toast('Ai intrat în: ' + (data.title || 'cameră'));
+  }).catch(() => toast('Codul nu e bun — verifică-l'));
+}
+
+function chatSend() {
+  const c = getChat();
+  if (!c.active) return;
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  const code = c.active;
+  fetch(CHAT_URL(code)).then(r => r.text()).then(txt => {
+    let data;
+    try { data = JSON.parse(txt); } catch (e) { data = { title: 'Cameră', msgs: [] }; }
+    if (!data.msgs) data.msgs = [];
+    data.msgs.push({ u: c.name, t: text, ts: Date.now() });
+    return fetch(CHAT_URL(code), { method: 'POST', body: JSON.stringify(data) });
+  }).then(() => {
+    inp.value = '';
+    chatRefresh();
+  }).catch(() => toast('Mesajul nu s-a trimis, reîncearcă'));
+}
+
+function chatRefresh() {
+  const c = getChat();
+  if (!c.active) return;
+  const el = document.getElementById('chat-msgs');
+  fetch(CHAT_URL(c.active)).then(r => r.text()).then(txt => {
+    let data = null;
+    try { if (txt && txt.trim()) data = JSON.parse(txt); } catch (e) {}
+    const msgs = (data && data.msgs) ? data.msgs : [];
+    if (!msgs.length) { el.innerHTML = '<div class="meal-meta">Niciun mesaj încă. Spune „Salut!" 👋</div>'; return; }
+    el.innerHTML = msgs.slice(-60).map(m => {
+      const mine = m.u === c.name;
+      const time = new Date(m.ts || Date.now()).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="msg ${mine ? 'mine' : 'other'}">
+        ${mine ? '' : '<div class="msg-user">' + esc(m.u) + '</div>'}
+        <div class="msg-text">${esc(m.t)}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }).catch(() => {});
+}
+
+function renderChat() {
+  const c = getChat();
+  document.getElementById('chat-name').value = c.name || '';
+  const roomsEl = document.getElementById('chat-rooms');
+  roomsEl.innerHTML = c.rooms.length
+    ? '<div class="day-title">Camerele tale</div>' + c.rooms.map(r =>
+        `<div class="chat-room-row" data-code="${r.code}"><span class="ex-name">${esc(r.title)}</span><span class="meal-meta">${r.code}</span></div>`
+      ).join('')
+    : '';
+  const room = c.rooms.find(r => r.code === c.active);
+  const lobby = document.getElementById('chat-lobby');
+  const roomEl = document.getElementById('chat-room');
+  if (room) {
+    lobby.classList.add('hidden');
+    roomEl.classList.remove('hidden');
+    document.getElementById('chat-room-title').textContent = room.title;
+    document.getElementById('chat-code-label').textContent = 'Cod cameră: ' + room.code;
+    chatRefresh();
+    if (chatTimer) clearInterval(chatTimer);
+    chatTimer = setInterval(() => {
+      if (!document.getElementById('tab-chat').classList.contains('active')) return;
+      chatRefresh();
+    }, 4000);
+  } else {
+    lobby.classList.remove('hidden');
+    roomEl.classList.add('hidden');
+    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+  }
+}
+
+document.getElementById('btn-chat-create').addEventListener('click', chatCreate);
+document.getElementById('btn-chat-show-join').addEventListener('click', () => {
+  document.getElementById('chat-join-box').classList.toggle('hidden');
+});
+document.getElementById('btn-chat-join').addEventListener('click', chatJoin);
+document.getElementById('btn-chat-send').addEventListener('click', chatSend);
+document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') chatSend(); });
+document.getElementById('btn-chat-leave').addEventListener('click', () => {
+  const c = getChat(); c.active = null; setChat(c); renderChat();
+});
+
 // init
 function ensureProfileFields() {
   const p = getProfile();
@@ -879,8 +1047,10 @@ function ensureProfileFields() {
   if (!p.cycle) { p.cycle = { last: null, len: 28 }; ch = true; }
   if (ch) store.set('profile', p);
 }
+updateStreak();
 renderDate();
 ensureProfileFields();
 applyTheme();
+setTimeout(hideSplash, 2400);
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}); }
 if (getProfile()) showApp(); else showSetup();
