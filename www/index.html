@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>FitPlan</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ecran de configurare (prima pornire) -->
+  <div id="setup-screen" class="screen">
+    <div class="setup-card">
+      <h1>FitPlan 💪</h1>
+      <p class="subtitle">Configurează-ți profilul ca să-ți calculăm planul corect.</p>
+
+      <label>Înălțime (cm)</label>
+      <input id="in-height" type="number" inputmode="numeric" value="186" />
+
+      <label>Greutate (kg)</label>
+      <input id="in-weight" type="number" inputmode="decimal" value="98" />
+
+      <label>Vârstă (ani)</label>
+      <input id="in-age" type="number" inputmode="numeric" value="27" />
+
+      <label>Sex</label>
+      <select id="in-sex">
+        <option value="m">Masculin</option>
+        <option value="f">Feminin</option>
+      </select>
+
+      <label>Obiectiv</label>
+      <select id="in-goal">
+        <option value="cut">Slăbire + definire</option>
+        <option value="maintain">Menținere</option>
+        <option value="bulk">Masă musculară</option>
+      </select>
+
+      <label>Nivel de activitate</label>
+      <select id="in-activity">
+        <option value="1.55">Moderat (antrenament 3-5x/săpt)</option>
+        <option value="1.725" selected>Foarte activ (antrenament intens + sport)</option>
+        <option value="1.375">Ușor activ</option>
+        <option value="1.2">Sedentar</option>
+      </select>
+
+      <label>Cheie API Gemini</label>
+      <input id="in-apikey" type="password" placeholder="Lipește cheia de la aistudio.google.com" />
+      <p class="hint">Cheia se salvează doar pe telefonul tău.</p>
+
+      <button id="btn-setup" class="primary">Salvează și începe</button>
+    </div>
+  </div>
+
+  <!-- Aplicatia principala -->
+  <div id="app" class="hidden">
+    <header>
+      <h1>FitPlan</h1>
+      <span id="today-date" class="date"></span>
+    </header>
+
+    <main>
+      <!-- TAB: AZI -->
+      <section id="tab-today" class="tab active">
+        <div class="card">
+          <h2>Azi <span id="remaining-total" class="pill"></span></h2>
+          <div class="macro">
+            <div class="macro-row"><span>Calorii</span><span id="cal-line"></span></div>
+            <div class="bar"><div id="cal-bar" class="bar-fill"></div></div>
+            <div class="macro-row"><span>Proteine</span><span id="prot-line"></span></div>
+            <div class="bar"><div id="prot-bar" class="bar-fill proto"></div></div>
+            <div class="macro-row"><span>Carbohidrați</span><span id="carb-line"></span></div>
+            <div class="bar"><div id="carb-bar" class="bar-fill carbo"></div></div>
+            <div class="macro-row"><span>Grăsimi</span><span id="fat-line"></span></div>
+            <div class="bar"><div id="fat-bar" class="bar-fill fato"></div></div>
+          </div>
+          <div id="recommendation" class="recommendation"></div>
+        </div>
+
+        <div class="card">
+          <h2>Antrenamentul de azi</h2>
+          <div id="today-workout"></div>
+        </div>
+      </section>
+
+      <!-- TAB: MANCARE -->
+      <section id="tab-meals" class="tab">
+        <button id="btn-photo" class="primary big">📷 Pozează mâncarea / eticheta</button>
+        <input type="file" id="file-input" accept="image/*" capture="environment" hidden />
+        <div id="photo-status" class="status"></div>
+
+        <div class="card">
+          <h2>Mesele de azi</h2>
+          <ul id="meal-list" class="meal-list"></ul>
+        </div>
+      </section>
+
+      <!-- TAB: ANTRENAMENT -->
+      <section id="tab-training" class="tab">
+        <div class="card">
+          <h2>Planul săptămânal</h2>
+          <div id="training-plan"></div>
+        </div>
+      </section>
+
+      <!-- TAB: PROGRES -->
+      <section id="tab-progress" class="tab">
+        <div class="card">
+          <h2>Greutatea mea</h2>
+          <div class="inline-form">
+            <input id="weight-input" type="number" inputmode="decimal" placeholder="kg azi" />
+            <button id="btn-weight" class="primary">Salvează</button>
+          </div>
+          <ul id="weight-list" class="meal-list"></ul>
+        </div>
+      </section>
+
+      <!-- TAB: SETARI -->
+      <section id="tab-settings" class="tab">
+        <div class="card">
+          <h2>Profil</h2>
+          <div id="profile-view"></div>
+          <button id="btn-edit-profile" class="secondary">Editează profilul</button>
+          <button id="btn-reset" class="danger">Resetează toate datele</button>
+        </div>
+      </section>
+    </main>
+
+    <nav>
+      <button data-tab="today" class="active">Astăzi</button>
+      <button data-tab="meals">Mâncare</button>
+      <button data-tab="training">Sală</button>
+      <button data-tab="progress">Progres</button>
+      <button data-tab="settings">Setări</button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
