@@ -409,11 +409,11 @@ function renderProfile() {
   `;
 }
 
-// ===== Gemini =====
+// ===== Gemini (incearca mai multe modele automat) =====
+const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+
 function analyzeMeal(base64) {
   const p = getProfile();
-  const model = 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
   const prompt = `Ești un nutriționist. Analizează această poză cu mâncare și/sau eticheta nutrițională. 
 Estimează caloriile și macro-urile (proteine, carbohidrați, grăsimi) pentru toată porția din poză.
 Dacă e o etichetă, folosește valorile de pe ea și raportează-le la porția consumată.
@@ -432,13 +432,29 @@ Răspunde DOAR cu un obiect JSON cu exact aceste chei:
     contents: [{ parts: [ { text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: base64 } } ] }],
     generationConfig: { responseMimeType: 'application/json' }
   };
-  return fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-  }).then(r => r.json()).then(data => {
-    const txt = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!txt) throw new Error('Răspuns gol de la Gemini');
-    return JSON.parse(txt.replace(/```json|```/g, '').trim());
-  });
+
+  const tryModel = (i) => {
+    if (i >= AI_MODELS.length) {
+      return Promise.reject(new Error('Toate modelele AI sunt ocupate acum. Încearcă peste câteva minute.'));
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS[i]}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
+    return fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(r => r.json()).then(data => {
+      if (data.error) {
+        if ([404, 429, 500, 503].includes(data.error.code)) return tryModel(i + 1);
+        throw new Error(data.error.message || 'Eroare de la Gemini');
+      }
+      const txt = (data.candidates?.[0]?.content?.parts || []).map(pt => pt.text || '').join('');
+      if (!txt) return tryModel(i + 1);
+      try {
+        return JSON.parse(txt.replace(/```json|```/g, '').trim());
+      } catch (e) {
+        return tryModel(i + 1);
+      }
+    });
+  };
+  return tryModel(0);
 }
 
 function resizeImage(file, maxDim, cb) {
