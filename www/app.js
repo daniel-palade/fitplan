@@ -429,7 +429,8 @@ function showSetup() {
 }
 function renderAll() {
   renderToday(); renderMeals(); renderTraining(); renderProgress(); renderProfile();
-  renderTrainCalendar(); renderFastCalendar(); renderChat();
+  renderTrainCalendar(); renderFastCalendar();
+  if (chatMode === null) showChatLobby();
 }
 function renderDate() {
   document.getElementById('today-date').textContent = DOW[new Date().getDay()] + ' · ' + new Date().toLocaleDateString('ro-RO');
@@ -870,7 +871,7 @@ document.addEventListener('click', (ev) => {
     const c = getChat();
     c.active = chatRow.dataset.code;
     setChat(c);
-    renderChat();
+    openRoomChat();
     return;
   }
   const addBtn = ev.target.closest('.log-add');
@@ -933,7 +934,7 @@ function chatCreate() {
     c.rooms.push({ code: code, title: title.trim() });
     c.active = code;
     setChat(c);
-    renderChat();
+    openRoomChat();
     toast('Cameră creată! Cod: ' + code);
   }).catch(() => toast('Nu am putut crea camera, încearcă din nou'));
 }
@@ -951,7 +952,7 @@ function chatJoin() {
     if (!c.rooms.find(r => r.code === code)) c.rooms.push({ code: code, title: data.title || 'Cameră' });
     c.active = code;
     setChat(c);
-    renderChat();
+    openRoomChat();
     toast('Ai intrat în: ' + (data.title || 'cameră'));
   }).catch(() => toast('Codul nu e bun — verifică-l'));
 }
@@ -997,7 +998,14 @@ function chatRefresh() {
   }).catch(() => {});
 }
 
-function renderChat() {
+let chatMode = null; // 'room' | 'coach' | 'zozo'
+let aiTyping = false;
+const AI_HIST = { coach: 'aiCoachHist', zozo: 'zozoHist' };
+
+function showChatLobby() {
+  chatMode = null;
+  aiTyping = false;
+  if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
   const c = getChat();
   document.getElementById('chat-name').value = c.name || '';
   const roomsEl = document.getElementById('chat-rooms');
@@ -1006,24 +1014,186 @@ function renderChat() {
         `<div class="chat-room-row" data-code="${r.code}"><span class="ex-name">${esc(r.title)}</span><span class="meal-meta">${r.code}</span></div>`
       ).join('')
     : '';
+  document.getElementById('chat-lobby').classList.remove('hidden');
+  document.getElementById('chat-room').classList.add('hidden');
+}
+
+function openRoomChat() {
+  const c = getChat();
   const room = c.rooms.find(r => r.code === c.active);
-  const lobby = document.getElementById('chat-lobby');
-  const roomEl = document.getElementById('chat-room');
-  if (room) {
-    lobby.classList.add('hidden');
-    roomEl.classList.remove('hidden');
-    document.getElementById('chat-room-title').textContent = room.title;
-    document.getElementById('chat-code-label').textContent = 'Cod cameră: ' + room.code;
+  if (!room) { showChatLobby(); return; }
+  chatMode = 'room';
+  document.getElementById('chat-lobby').classList.add('hidden');
+  document.getElementById('chat-room').classList.remove('hidden');
+  document.getElementById('chat-room-title').textContent = room.title;
+  document.getElementById('chat-code-label').textContent = 'Cod cameră: ' + room.code;
+  chatRefresh();
+  if (chatTimer) clearInterval(chatTimer);
+  chatTimer = setInterval(() => {
+    if (!document.getElementById('tab-chat').classList.contains('active')) return;
     chatRefresh();
-    if (chatTimer) clearInterval(chatTimer);
-    chatTimer = setInterval(() => {
-      if (!document.getElementById('tab-chat').classList.contains('active')) return;
-      chatRefresh();
-    }, 4000);
-  } else {
-    lobby.classList.remove('hidden');
-    roomEl.classList.add('hidden');
-    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+  }, 4000);
+}
+
+// ===== Scriptul antrenorului AI (se schimba cu obiectivul din Setari) =====
+function coachScript() {
+  const p = getProfile();
+  const t = computeTargets(p);
+  const TRAIN = getTraining();
+  const dow = DOW[new Date().getDay()];
+  const todayW = TRAIN[dow] ? TRAIN[dow].title : 'odihnă sau cardio ușor';
+  const info = weekInfo();
+  const weekTxt = info.deload ? 'săptămână de DESCĂRCARE (volum redus)' : `săptămâna ${info.weekInMeso + 1} din 4 de ÎNCĂRCARE`;
+  const fi = fastInfo(todayKey());
+  const fastNote = fi.active ? 'IMPORTANT: azi ține post ortodox (fără carne, lapte, ouă) — orice sfat alimentar trebuie să respecte postul. ' : '';
+  const pi = periodInfo();
+  const periodNote = (pi && pi.inPeriod) ? 'IMPORTANT: e în perioada menstruală — recomandă antrenamente mai ușoare, fier și hidratare. ' : '';
+  const sexNote = p.sex === 'f'
+    ? 'E femeie: accent pe fesieri/picioare în antrenamente, fii atentă la energie, fier și calciu. '
+    : 'E bărbat: forță și masă în focus, joacă fotbal marțea (zi de sport, fără sală). ';
+  const base = `Ești antrenor personal certificat și nutriționist sportiv, expert. Îl/O ajuta pe: ${p.name || 'elevul meu'}, ${p.age} ani, ${p.height} cm, ${p.weight} kg.
+DATELE SALE (folosește-le în răspunsuri): ținta zilnică ${t.target} kcal · proteine ${t.protein}g · carbo ${t.carbs}g · grăsimi ${t.fat}g. Antrenament 5 zile/săptămână. Azi are: ${todayW}. Suntem în ${weekTxt}.
+${sexNote}${periodNote}${fastNote}`;
+  const style = `STIL DE RĂSPUNS:
+- Direct, cald, motivant — ca un antrenor care ține la elevul lui.
+- Mereu concret: numere, grame, kcal, serii × repetări. Fără sfaturi vagi.
+- Maxim ~150 de cuvinte. Text simplu, fără markdown, fără asteriscuri.
+- La întrebări scurte, răspuns scurt și la obiect.
+- Dacă nu știi ceva exact, spune onest și recomandă verificare.`;
+  if (p.goal === 'cut') {
+    return `${base}
+OBIECTIVUL: SLĂBIRE + DEFINIRE — deficit caloric moderat cu păstrarea masei musculare.
+PRINCIPIILE TALE CA ANTRENOR:
+1. Deficit moderat, niciodată extrem — minim 1500 kcal/zi (femei), 1800 kcal/zi (bărbați).
+2. Proteinele sunt sacre: minim 30-40g la fiecare masă. Când lipsesc, sugerează surse exacte cu grame.
+3. Forța rămâne prioritară în deficit: greutăți în zona 6-12 repetări ca să nu piardă mușchi. Cardio e complement, nu principal.
+4. Pași zilnici 8-10 mii și somn 7-8h — jumătate din rețeta slăbirii.
+5. Cântărire zilnic dimineața, dar progresul se judecă pe media a 7 zile. Slăbire sănătoasă: 0.5-0.75 kg/săptămână.
+${style}`;
+  }
+  if (p.goal === 'bulk') {
+    return `${base}
+OBIECTIVUL: MASĂ MUSCULARĂ — surplus caloric controlat + supraîncărcare progresivă.
+PRINCIPIILE TALE CA ANTRENOR:
+1. Surplus moderat (+10-15% peste necesar, ținta lui: ${t.target} kcal). Creștere ideală: 0.25-0.5 kg/săptămână — mai repede înseamnă grăsime.
+2. SUPRAÎNCĂRCARE PROGRESIVĂ = regula de aur: când face toate repetările cu formă bună, data viitoare +1-2 kg la exercițiile principale.
+3. Compusele sunt coloana vertebrală: împins, tracțiuni, genuflexiuni, îndreptări, ramat. 10-20 serii/muschi/săptămână.
+4. Carbohidrații în jurul antrenamentului = energie. Proteine ${t.protein}g/zi în 3-5 mese.
+5. Somn 7-9h — mușchiul crește în odihnă, nu în sală.
+${style}`;
+  }
+  return `${base}
+OBIECTIVUL: MENȚINERE + sănătate pe termen lung.
+PRINCIPIILE TALE CA ANTRENOR:
+1. Echilibru 80/20: 80% mâncare curată, 20% flexibilitate — așa ține pe viață.
+2. Forță 3-4x/săptămână + cardio 150 min/săptămână (recomandarea OMS).
+3. Greutate stabilă = energie în echilibru; fără restricții extreme.
+4. Obiceiuri mici, sustenabile: pași zilnici, somn constant, proteine la fiecare masă.
+5. Preventiv: mobilitate pentru spate (muncă de birou), postură, hidratare 2-3L/zi.
+${style}`;
+}
+
+const ZOZO_SCRIPT = `Ești ZOZO — expert în fitness, sport, nutriție, suplimente și recuperare. Numele tău e ZOZO pentru toată lumea.
+SUBIECTE PERMISE (doar astea): fitness, antrenamente, sala, exerciții, nutriție, suplimente, sport, recuperare, motivație, stiri și articole din fitness.
+Dacă userul iese de la subiect, refuză politicos, cu umor dacă se potrivește, și adu conversația înapoi la fitness.
+Dacă întreabă de stiri foarte recente, spune clar că nu ai date în timp real și recomandă surse de specialitate.
+STIL: prietenos, clar, la obiect, maxim ~150 cuvinte, text simplu fără markdown. Te adresezi cu „tu".`;
+
+function geminiText(body) {
+  const p = getProfile();
+  const tryModel = (i) => {
+    if (i >= AI_MODELS.length) return Promise.reject(new Error('AI-ul e ocupat acum, reîncearcă în câteva minute'));
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS[i]}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
+    return fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(r => r.json()).then(data => {
+      if (data.error) {
+        if ([404, 429, 500, 503].includes(data.error.code)) return tryModel(i + 1);
+        throw new Error(data.error.message || 'Eroare AI');
+      }
+      const txt = (data.candidates?.[0]?.content?.parts || []).map(pt => pt.text || '').join('');
+      if (!txt) return tryModel(i + 1);
+      return txt;
+    });
+  };
+  return tryModel(0);
+}
+
+function chatBubble(m, mine, aiName) {
+  const time = new Date(m.ts || Date.now()).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+  return `<div class="msg ${mine ? 'mine' : 'other'}">
+    ${mine ? '' : '<div class="msg-user">' + esc(m.u || aiName || 'Mesaj') + '</div>'}
+    <div class="msg-text">${esc(m.text)}</div>
+    <div class="msg-time">${time}</div>
+  </div>`;
+}
+
+function renderAIChat() {
+  const el = document.getElementById('chat-msgs');
+  const hist = store.get(AI_HIST[chatMode], []);
+  const aiName = chatMode === 'coach' ? 'Antrenor AI' : 'ZOZO';
+  if (!hist.length) {
+    const intro = chatMode === 'coach'
+      ? 'Salut! Sunt antrenorul tău AI 💪 Cunosc obiectivul tău și datele tale — întreabă-mă orice: mese, antrenamente, greutăți, motivație.'
+      : 'Salut, eu sunt ZOZO ⭐ Vorbesc doar despre fitness, sport și nutriție. Ce te interesează?';
+    el.innerHTML = `<div class="meal-meta">${intro}</div>`;
+    return;
+  }
+  let html = hist.slice(-60).map(m => chatBubble(m, m.role === 'user', aiName)).join('');
+  if (aiTyping) {
+    html += `<div class="msg other"><div class="msg-user">${aiName}</div><div class="msg-text">scrie...</div></div>`;
+  }
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+function aiSend(text) {
+  const key = AI_HIST[chatMode];
+  const hist = store.get(key, []);
+  hist.push({ role: 'user', text: text, ts: Date.now() });
+  const system = chatMode === 'coach' ? coachScript() : ZOZO_SCRIPT;
+  const contents = hist.slice(-16).map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.text }]
+  }));
+  const body = {
+    contents: contents,
+    systemInstruction: { parts: [{ text: system }] }
+  };
+  aiTyping = true;
+  renderAIChat();
+  geminiText(body).then(txt => {
+    hist.push({ role: 'ai', text: txt.trim(), ts: Date.now() });
+    store.set(key, hist.slice(-100));
+    aiTyping = false;
+    renderAIChat();
+  }).catch(err => {
+    aiTyping = false;
+    toast(err.message);
+    renderAIChat();
+  });
+}
+
+function openAIChat(mode) {
+  chatMode = mode;
+  document.getElementById('chat-lobby').classList.add('hidden');
+  document.getElementById('chat-room').classList.remove('hidden');
+  document.getElementById('chat-room-title').textContent = mode === 'coach' ? '💪 Antrenorul meu AI' : '⭐ ZOZO';
+  document.getElementById('chat-code-label').textContent = mode === 'coach'
+    ? 'Personalizat pe obiectivul și datele tale'
+    : 'Expert universal în fitness & nutriție';
+  renderAIChat();
+}
+
+function doSend() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  if (chatMode === 'coach' || chatMode === 'zozo') {
+    inp.value = '';
+    aiSend(text);
+  } else if (chatMode === 'room') {
+    chatSend();
   }
 }
 
@@ -1032,10 +1202,12 @@ document.getElementById('btn-chat-show-join').addEventListener('click', () => {
   document.getElementById('chat-join-box').classList.toggle('hidden');
 });
 document.getElementById('btn-chat-join').addEventListener('click', chatJoin);
-document.getElementById('btn-chat-send').addEventListener('click', chatSend);
-document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') chatSend(); });
+document.getElementById('btn-ai-coach').addEventListener('click', () => openAIChat('coach'));
+document.getElementById('btn-ai-zozo').addEventListener('click', () => openAIChat('zozo'));
+document.getElementById('btn-chat-send').addEventListener('click', doSend);
+document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
 document.getElementById('btn-chat-leave').addEventListener('click', () => {
-  const c = getChat(); c.active = null; setChat(c); renderChat();
+  const c = getChat(); c.active = null; setChat(c); showChatLobby();
 });
 
 // init
