@@ -1,4 +1,4 @@
-const CACHE = 'fitplan-v2';
+const CACHE = 'fitplan-v3';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {

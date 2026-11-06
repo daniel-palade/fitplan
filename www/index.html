@@ -30,8 +30,8 @@
 
       <label>Sex</label>
       <select id="in-sex">
-        <option value="m">Masculin</option>
-        <option value="f">Feminin</option>
+        <option value="m">Băiat</option>
+        <option value="f">Fată</option>
       </select>
 
       <label>Obiectiv</label>
@@ -90,6 +90,15 @@
 
       <!-- TAB: MANCARE -->
       <section id="tab-meals" class="tab">
+        <div class="card">
+          <h2>✝️ Calendar posturi</h2>
+          <div class="cal-strip" id="fast-cal"></div>
+          <div class="cal-legend">🟣 zile de post · 🔴 post negru · chenar = azi</div>
+          <div id="fast-banner" class="recommendation"></div>
+          <button id="btn-fast-plan" class="secondary">🥗 Planul meu de post</button>
+          <div id="fast-plan" class="hidden"></div>
+        </div>
+
         <button id="btn-photo" class="primary big">📷 Pozează mâncarea / eticheta</button>
         <input type="file" id="file-input" accept="image/*" capture="environment" hidden />
         <div id="photo-status" class="status"></div>
@@ -102,6 +111,13 @@
 
       <!-- TAB: ANTRENAMENT -->
       <section id="tab-training" class="tab">
+        <div class="card">
+          <h2>📅 Calendar periodizare</h2>
+          <div class="cal-strip" id="train-cal"></div>
+          <div class="cal-legend">🔵 încărcare · 🟡 descărcare · chenar = săptămâna curentă</div>
+          <div id="train-status" class="recommendation"></div>
+          <button id="btn-period" class="secondary hidden">🌸 Menstruație azi (apăsă când începe)</button>
+        </div>
         <div class="card">
           <h2>Planul săptămânal</h2>
           <div id="training-plan"></div>

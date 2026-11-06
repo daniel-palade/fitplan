@@ -9,6 +9,12 @@ const store = {
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d) => d.split('-').reverse().join('.');
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+const addDays = (dstr, n) => {
+  const d = new Date(dstr);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 
 function round1(n) { return Math.round(n * 10) / 10; }
 function toast(msg) {
@@ -30,7 +36,7 @@ function computeTargets(p) {
   if (p.goal === 'cut') target = tdee * 0.80;
   else if (p.goal === 'bulk') target = tdee * 1.10;
   let protein, fat;
-  if (p.goal === 'cut') { protein = 2.0 * p.weight; fat = 0.8 * p.weight; }
+  if (p.goal === 'cut') { protein = p.sex === 'f' ? 1.8 * p.weight : 2.0 * p.weight; fat = 0.8 * p.weight; }
   else if (p.goal === 'bulk') { protein = 1.8 * p.weight; fat = 0.9 * p.weight; }
   else { protein = 1.7 * p.weight; fat = 0.85 * p.weight; }
   const carbs = (target - protein * 4 - fat * 9) / 4;
@@ -40,25 +46,16 @@ function computeTargets(p) {
   };
 }
 
-// ===== Exercitii pe grupe de muschi =====
-const MUSCLE_GROUPS = {
-  "Piept": ["Împins din piept cu bara", "Împins înclinat cu bara", "Împins înclinat cu gantere", "Fluturări cu gantere", "Fluturări la cablu", "Fluturări la aparat (pec deck)", "Dips (piept)"],
-  "Spate": ["Tracțiuni la bară", "Tracțiuni la aparat (lat pulldown)", "Ramat cu bara", "Ramat cu gantera (un braț)", "Ramat la cablu (seated row)", "Îndreptări cu bara (deadlift)", "Ridicări trapez (shrugs)"],
-  "Umeri": ["Împins la umeri cu bara", "Împins la umeri cu gantere", "Fluturări laterale", "Fluturări frontale", "Fluturări spate (rear delt)", "Ridicare la bărbie"],
-  "Biceps": ["Curl cu bara", "Curl cu gantere alternativ", "Curl ciocan (hammer)", "Curl la cablu", "Curl concentrat"],
-  "Triceps": ["Împins triceps la cablu (pushdown)", "Extensii cu bara EZ (skull crusher)", "Extensii cu gantera (peste cap)", "Dips (triceps)", "Flotări cu priză îngustă"],
-  "Picioare": ["Genuflexiuni cu bara (squat)", "Împins la presă (leg press)", "Îndreptări românești (RDL)", "Fandări (lunges)", "Extensii cvadriceps", "Flexii biceps femural", "Ridicări pe gambe", "Hip thrust"],
-  "Abdomen": ["Abdomene (crunch)", "Plank", "Ridicări de picioare", "Twist rusesc", "Dead bug", "Bird dog"]
-};
-
 // ===== Sfaturi pentru executie corecta =====
 const TIPS = {
   "Împins din piept cu bara": "Omoplații strânși și retrași, talpa fixă pe sol, coboară bara la nivelul pieptului, coatele la ~45°. Nu balansa șoldurile.",
+  "Împins din piept cu gantere": "Ganterele la nivelul pieptului, coboară până simți întinderea, coatele la ~45°, fără balans.",
   "Împins înclinat cu bara": "Banca la 30-45°, coboară bara spre claviculă, coatele sub nivelul umerilor, mișcare controlată.",
   "Împins înclinat cu gantere": "Coboară ganterele până simți întinderea în piept, control la coborâre 2-3 sec, fără balans.",
   "Fluturări cu gantere": "Coatele ușor îndoite și fixe, mișcare de arc larg, nu transforma în împins.",
   "Fluturări la cablu": "Aduci mâinile în față până se ating, strângi pieptul 1 sec, coatele fixe.",
   "Fluturări la aparat (pec deck)": "Spatele lipit de bancă, mișcare lentă și controlată, fără elan.",
+  "Fluturări la aparat lateral": "Spatele lipit, ridică doar până la nivelul umerilor, fără elan.",
   "Dips (piept)": "Înclină trunchiul ușor în față, coboară până la 90° la cot, fără balansare.",
   "Tracțiuni la bară": "Coboară umerii înainte de a trage, duci coatele spre corp, fără balans. Priză puțin mai lată de umeri.",
   "Tracțiuni la aparat (lat pulldown)": "Bara la pieptul superior, nu în spatele gâtului, arcuire ușoară, trage cu coatele.",
@@ -72,6 +69,7 @@ const TIPS = {
   "Fluturări laterale": "Coboară umerii, ridică la nivelul umerilor, coatele ușor îndoite, fără elan.",
   "Fluturări frontale": "Ridică la nivelul umerilor, fără legănarea trunchiului.",
   "Fluturări spate (rear delt)": "Trunchi înclinat, duci coatele în sus și în afară, strângi 1 sec.",
+  "Face pull la cablu": "Trage sfoara spre frunte cu coatele sus, strânge umerii posteriori 1 sec. Excelent pentru postură.",
   "Ridicare la bărbie": "Priză lată, ridică spre bărbie, coatele deasupra mâinilor.",
   "Curl cu bara": "Coatele lipite de corp, fără balans de trunchi, coborâre controlată 2-3 sec.",
   "Curl cu gantere alternativ": "Rotește palma în sus în timp ce urci, coatele fixe.",
@@ -84,87 +82,252 @@ const TIPS = {
   "Dips (triceps)": "Trunchi drept, coboară până la 90° la cot, coatele apropiate.",
   "Flotări cu priză îngustă": "Mâinile sub umeri, coatele spre spate, nu lateral.",
   "Genuflexiuni cu bara (squat)": "Bara pe trapezi, genunchii în direcția vârfurilor, pieptul sus, coboară șoldul, călcâiele pe sol.",
+  "Genuflexiuni frontale cu bara": "Bara pe clavicule, coatele sus, trunchi drept, coboară controlat.",
+  "Genuflexiuni la aparat (hack squat)": "Spatele lipit de sprijin, genunchii pe direcția vârfurilor, coboară sub 90° controlat.",
   "Împins la presă (leg press)": "Nu bloca genunchii complet sus, talpa complet pe platformă, mișcare controlată.",
   "Îndreptări românești (RDL)": "Genunchii ușor îndoiți, spate drept, bara alunecă pe coapse, oprește-te la întinderea maximă.",
   "Fandări (lunges)": "Pas lung, genunchiul din față nu trece mult de vârf, trunchi drept.",
+  "Fandări bulgărești (split squat)": "Piciorul din spate pe bancă, coboară vertical, genunchiul din față stabil, fără răsucire.",
+  "Fandări invers": "Pas înapoi, greutatea pe piciorul din față, trunchi drept — mai ușor pentru genunchi.",
+  "Step-up pe bancă": "Urcă cu piciorul din față, fără împins cu cel din spate, coboară controlat.",
   "Extensii cvadriceps": "Întinde complet sus, ține 1 sec, coboară lent.",
   "Flexii biceps femural": "Șoldurile fixe pe bancă, fără ridicarea feselor, mișcare completă.",
   "Ridicări pe gambe": "Întindere completă jos, ridicare completă sus, 1-2 sec pauză sus.",
   "Hip thrust": "Bara peste șolduri, bărbia în piept, împinge cu călcâiele, strânge fesierii 1 sec sus.",
+  "Glute bridge cu bara": "Spatele drept pe sol, împinge cu călcâiele, strânge fesierii sus 1 sec.",
+  "Kickback la cablu": "Pantoful pe manșă, împinge piciorul înapoi și sus, strânge fesierul 1 sec.",
+  "Abducții la aparat": "Ridică picioarele în afară lent, fără elan, control la întoarcere.",
+  "Abducții cu bandă elastică": "Banda deasupra genunchilor, despică picioarele lent, ține 1 sec.",
   "Abdomene (crunch)": "Ridică doar umerii, bărbia departe de piept, nu trage de ceafă.",
   "Plank": "Corpul drept ca o scândură, buricul tras, fesierii strânși, respiră normal.",
   "Ridicări de picioare": "Spatele lipit de sol, coboară picioarele lent fără a atinge solul.",
   "Twist rusesc": "Rotește din trunchi, nu doar din brațe, picioarele fixe.",
   "Dead bug": "Spatele lipit de sol, mișcări lente și controlate, fără arcuire lombară.",
-  "Bird dog": "Mâna opusă piciorului, corp drept, ține 2 sec în extensie."
+  "Bird dog": "Mâna opusă piciorului, corp drept, ține 2 sec în extensie.",
+  "Biceps + Triceps (superset)": "Un exercițiu de biceps urmat imediat de unul de triceps, pauză abia după pereche."
 };
 
-// ===== Plan de antrenament (5 zile) =====
-const TRAINING = {
+// ===== Programe de antrenament (se rotesc la 4 saptamani: a / b) =====
+const TRAINING_M = {
   Luni: {
     title: "Luni — Push (piept, umeri, triceps)",
     note: "Focus pe forma corectă, control la coborâre.",
     exercises: [
-      { e: "Împins din piept cu bara", d: "4 × 6-10" },
-      { e: "Împins înclinat cu gantere", d: "3 × 8-12" },
-      { e: "Fluturări cu gantere", d: "3 × 12-15" },
-      { e: "Împins la umeri cu bara", d: "3 × 8-12" },
-      { e: "Fluturări laterale", d: "3 × 12-15" },
-      { e: "Împins triceps la cablu (pushdown)", d: "3 × 10-15" }
+      { a: "Împins din piept cu bara", b: "Împins din piept cu gantere", d: "4 × 6-10" },
+      { a: "Împins înclinat cu gantere", b: "Împins înclinat cu bara", d: "3 × 8-12" },
+      { a: "Fluturări cu gantere", b: "Fluturări la aparat (pec deck)", d: "3 × 12-15" },
+      { a: "Împins la umeri cu bara", b: "Împins la umeri cu gantere", d: "3 × 8-12" },
+      { a: "Fluturări laterale", b: "Fluturări la aparat lateral", d: "3 × 12-15" },
+      { a: "Împins triceps la cablu (pushdown)", b: "Extensii cu bara EZ (skull crusher)", d: "3 × 10-15" }
     ]
   },
   Miercuri: {
     title: "Miercuri — Pull (spate, biceps)",
     note: "Antrenament cheie pentru durerile de spate.",
     exercises: [
-      { e: "Tracțiuni la bară", d: "4 × 6-12" },
-      { e: "Ramat cu bara", d: "4 × 8-12" },
-      { e: "Ramat la cablu (seated row)", d: "3 × 10-12" },
-      { e: "Fluturări spate (rear delt)", d: "3 × 12-15" },
-      { e: "Curl cu bara", d: "3 × 10-12" },
-      { e: "Curl ciocan (hammer)", d: "3 × 10-12" }
+      { a: "Tracțiuni la bară", b: "Tracțiuni la aparat (lat pulldown)", d: "4 × 6-12" },
+      { a: "Ramat cu bara", b: "Ramat la cablu (seated row)", d: "4 × 8-12" },
+      { a: "Ramat la cablu (seated row)", b: "Ramat cu gantera (un braț)", d: "3 × 10-12" },
+      { a: "Fluturări spate (rear delt)", b: "Face pull la cablu", d: "3 × 12-15" },
+      { a: "Curl cu bara", b: "Curl cu gantere alternativ", d: "3 × 10-12" },
+      { a: "Curl ciocan (hammer)", b: "Curl la cablu", d: "3 × 10-12" }
     ]
   },
   Joi: {
     title: "Joi — Picioare (posterior predominant)",
     note: "Fesieri + lombar puternici = spate sănătos.",
     exercises: [
-      { e: "Genuflexiuni cu bara (squat)", d: "4 × 6-10" },
-      { e: "Îndreptări românești (RDL)", d: "4 × 8-12" },
-      { e: "Hip thrust", d: "3 × 8-12" },
-      { e: "Fandări (lunges)", d: "3 × 10-12" },
-      { e: "Ridicări pe gambe", d: "4 × 12-15" }
+      { a: "Genuflexiuni cu bara (squat)", b: "Genuflexiuni frontale cu bara", d: "4 × 6-10" },
+      { a: "Îndreptări românești (RDL)", b: "Îndreptări cu bara (deadlift)", d: "4 × 8-12" },
+      { a: "Hip thrust", b: "Glute bridge cu bara", d: "3 × 8-12" },
+      { a: "Fandări (lunges)", b: "Fandări bulgărești (split squat)", d: "3 × 10-12" },
+      { a: "Ridicări pe gambe", d: "4 × 12-15" }
     ]
   },
   Vineri: {
     title: "Vineri — Upper body (hypertrofie)",
     note: "Volum moderat, timp de sub tensiune.",
     exercises: [
-      { e: "Împins înclinat cu gantere", d: "4 × 8-12" },
-      { e: "Tracțiuni la aparat (lat pulldown)", d: "4 × 8-12" },
-      { e: "Împins la umeri cu gantere", d: "3 × 8-12" },
-      { e: "Ramat cu gantera (un braț)", d: "3 × 10-12" },
-      { e: "Fluturări laterale", d: "3 × 12-15" },
-      { e: "Biceps + Triceps (superset)", d: "3 × 12" }
+      { a: "Împins înclinat cu gantere", b: "Împins din piept cu gantere", d: "4 × 8-12" },
+      { a: "Tracțiuni la aparat (lat pulldown)", b: "Tracțiuni la bară", d: "4 × 8-12" },
+      { a: "Împins la umeri cu gantere", b: "Ridicare la bărbie", d: "3 × 8-12" },
+      { a: "Ramat cu gantera (un braț)", b: "Ramat cu bara", d: "3 × 10-12" },
+      { a: "Fluturări laterale", b: "Fluturări spate (rear delt)", d: "3 × 12-15" },
+      { a: "Biceps + Triceps (superset)", d: "3 × 12" }
     ]
   },
   Sâmbătă: {
     title: "Sâmbătă — Picioare + Core",
     note: "Core puternic protejează coloana.",
     exercises: [
-      { e: "Împins la presă (leg press)", d: "4 × 10-15" },
-      { e: "Fandări (lunges)", d: "3 × 10-12" },
-      { e: "Extensii cvadriceps", d: "3 × 12-15" },
-      { e: "Flexii biceps femural", d: "3 × 12-15" },
-      { e: "Plank", d: "3 × 30-60 sec" },
-      { e: "Dead bug", d: "3 × 10" },
-      { e: "Bird dog", d: "3 × 10" }
+      { a: "Împins la presă (leg press)", b: "Genuflexiuni cu bara (squat)", d: "4 × 10-15" },
+      { a: "Fandări (lunges)", b: "Step-up pe bancă", d: "3 × 10-12" },
+      { a: "Extensii cvadriceps", b: "Fandări bulgărești (split squat)", d: "3 × 12-15" },
+      { a: "Flexii biceps femural", b: "Îndreptări românești (RDL)", d: "3 × 12-15" },
+      { a: "Plank", d: "3 × 30-60 sec" },
+      { a: "Dead bug", d: "3 × 10" },
+      { a: "Bird dog", d: "3 × 10" }
     ]
   }
 };
-const DOW = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
 
-// ===== Stretching =====
+const TRAINING_F = {
+  Luni: {
+    title: "Luni — Fesieri + Femural",
+    note: "Accent pe fesieri, execuție controlată.",
+    exercises: [
+      { a: "Hip thrust", b: "Glute bridge cu bara", d: "4 × 8-12" },
+      { a: "Îndreptări românești (RDL)", b: "Flexii biceps femural", d: "4 × 8-12" },
+      { a: "Fandări bulgărești (split squat)", b: "Fandări (lunges)", d: "3 × 10-12" },
+      { a: "Abducții la aparat", b: "Abducții cu bandă elastică", d: "3 × 15" },
+      { a: "Ridicări pe gambe", d: "4 × 12-15" }
+    ]
+  },
+  Miercuri: {
+    title: "Miercuri — Upper body (moderat)",
+    note: "Tonifiere piept/spate/umeri, fără volum exagerat.",
+    exercises: [
+      { a: "Împins din piept cu gantere", b: "Împins din piept cu bara", d: "3 × 8-12" },
+      { a: "Tracțiuni la aparat (lat pulldown)", b: "Ramat la cablu (seated row)", d: "3 × 8-12" },
+      { a: "Împins la umeri cu gantere", b: "Fluturări laterale", d: "3 × 10-12" },
+      { a: "Fluturări spate (rear delt)", b: "Face pull la cablu", d: "3 × 12-15" },
+      { a: "Plank", d: "3 × 30-45 sec" }
+    ]
+  },
+  Joi: {
+    title: "Joi — Cvadriceps + Fesieri",
+    note: "Picioare puternice, genunchi protejați.",
+    exercises: [
+      { a: "Genuflexiuni cu bara (squat)", b: "Genuflexiuni la aparat (hack squat)", d: "4 × 6-10" },
+      { a: "Împins la presă (leg press)", b: "Fandări invers", d: "4 × 10-15" },
+      { a: "Extensii cvadriceps", b: "Step-up pe bancă", d: "3 × 12-15" },
+      { a: "Hip thrust", b: "Kickback la cablu", d: "3 × 10-12" },
+      { a: "Flexii biceps femural", b: "Îndreptări românești (RDL)", d: "3 × 12-15" }
+    ]
+  },
+  Vineri: {
+    title: "Vineri — Upper + Core",
+    note: "Brațe tonifiate + abdomen stabil.",
+    exercises: [
+      { a: "Împins înclinat cu gantere", b: "Fluturări la aparat (pec deck)", d: "3 × 10-12" },
+      { a: "Ramat cu gantera (un braț)", b: "Ramat cu bara", d: "3 × 10-12" },
+      { a: "Fluturări laterale", b: "Ridicare la bărbie", d: "3 × 12-15" },
+      { a: "Curl cu gantere alternativ", b: "Curl ciocan (hammer)", d: "2 × 12" },
+      { a: "Împins triceps la cablu (pushdown)", b: "Extensii cu gantera (peste cap)", d: "2 × 12" },
+      { a: "Dead bug", d: "3 × 10" }
+    ]
+  },
+  Sâmbătă: {
+    title: "Sâmbătă — Fesieri + Core",
+    note: "Final de săptămână: fesieri și centura abdominală.",
+    exercises: [
+      { a: "Kickback la cablu", b: "Hip thrust", d: "3 × 12-15" },
+      { a: "Fandări invers", b: "Fandări bulgărești (split squat)", d: "3 × 10-12" },
+      { a: "Abducții la aparat", b: "Abducții cu bandă elastică", d: "3 × 15" },
+      { a: "Ridicări de picioare", b: "Twist rusesc", d: "3 × 12-15" },
+      { a: "Plank", d: "3 × 45 sec" }
+    ]
+  }
+};
+
+const DOW = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+function getTraining() {
+  const p = getProfile();
+  return p && p.sex === 'f' ? TRAINING_F : TRAINING_M;
+}
+
+// ===== Periodizare (3 saptamani incarcare + 1 descarcare) =====
+function weekInfo() {
+  const p = getProfile();
+  const start = p.programStart || todayKey();
+  const totalWeeks = Math.max(0, Math.floor(daysBetween(start, todayKey()) / 7));
+  const weekInMeso = totalWeeks % 4;
+  return {
+    totalWeeks, weekInMeso,
+    meso: Math.floor(totalWeeks / 4) + 1,
+    block: Math.floor(totalWeeks / 4) % 2,
+    deload: weekInMeso === 3
+  };
+}
+function activeSlotName(slot) {
+  const info = weekInfo();
+  return (info.block === 0 || !slot.b) ? slot.a : slot.b;
+}
+
+// ===== Redenumiri (cand nu ai aparatul din sala) =====
+function getRenames() { return store.get('renames', {}); }
+function setRename(key, name) {
+  const r = getRenames();
+  if (name) r[key] = name; else delete r[key];
+  store.set('renames', r);
+}
+function displayName(key) { return getRenames()[key] || key; }
+
+// ===== Ciclu menstrual (profil feminin) =====
+function periodInfo() {
+  const p = getProfile();
+  if (!p || p.sex !== 'f' || !p.cycle || !p.cycle.last) return null;
+  const len = p.cycle.len || 28;
+  const days = daysBetween(p.cycle.last, todayKey());
+  const dayOfCycle = ((days % len) + len) % len;
+  return { logged: true, dayOfCycle, inPeriod: dayOfCycle < 5, nextIn: len - dayOfCycle };
+}
+
+// ===== Posturi ortodoxe =====
+const FASTS = [
+  { name: "Postul Crăciunului", start: "2026-11-15", end: "2026-12-24" },
+  { name: "Postul Adormirii Maicii Domnului", start: "2027-08-01", end: "2027-08-14" },
+  { name: "Postul Paștelui", start: "2027-02-15", end: "2027-05-01" },
+  { name: "Postul Sfinților Apostoli", start: "2027-05-31", end: "2027-07-11" },
+  { name: "Postul Adormirii Maicii Domnului", start: "2027-08-01", end: "2027-08-14" },
+  { name: "Postul Crăciunului", start: "2027-11-15", end: "2027-12-24" }
+];
+const BLACK_FASTS = ["2027-04-30"]; // Vinerea Mare
+
+function fastInfo(dstr) {
+  const range = FASTS.find(f => dstr >= f.start && dstr <= f.end);
+  const black = BLACK_FASTS.includes(dstr);
+  const dow = new Date(dstr).getDay();
+  const wedfri = !range && !black && (dow === 3 || dow === 5);
+  return { active: !!range || black || wedfri, name: range ? range.name : null, start: range ? range.start : null, end: range ? range.end : null, black, wedfri };
+}
+
+function fastBannerHTML() {
+  const ds = todayKey();
+  const fi = fastInfo(ds);
+  if (fi.black) return '🚫 <b>POST NEGRU</b> azi (Vinerea Mare) — doar apă sau foarte puțin după amiază. La sală: fără efort mare, doar mobilitate / plimbare.';
+  if (fi.name) {
+    const left = Math.max(0, daysBetween(ds, fi.end)) + 1;
+    return `🌿 Ești în <b>${fi.name}</b> — încă ${left} ${left === 1 ? 'zi' : 'zile'} (până pe ${fmtDate(fi.end)}). Deschide planul de post de mai jos ca să-ți păstrezi proteinele.`;
+  }
+  if (fi.wedfri) return '🌿 Azi e o zi de post (miercuri/vineri) — fără carne, lapte, ouă, pește. Vezi planul de post.';
+  const next = FASTS.find(f => f.start > ds);
+  if (next) {
+    const inDays = daysBetween(ds, next.start);
+    if (inDays <= 14) return `✝️ <b>${next.name}</b> începe în ${inDays} ${inDays === 1 ? 'zi' : 'zile'} (${fmtDate(next.start)}).`;
+  }
+  return '✝️ Azi nu e post obligatoriu. Mănâncă normal, după planul tău.';
+}
+
+const FAST_PLAN_HTML = `
+<div class="day-title">Proteine în post (ținta ta zilnică)</div>
+<div class="exercise"><span class="ex-name">Soia texturată (100g uscată)</span> — <span class="ex-detail">~50g proteine · cea mai bună sursă</span></div>
+<div class="exercise"><span class="ex-name">Tofu (200g)</span> — <span class="ex-detail">~20g proteine</span></div>
+<div class="exercise"><span class="ex-name">Linte gătită (250g)</span> — <span class="ex-detail">~22g proteine</span></div>
+<div class="exercise"><span class="ex-name">Năut gătit (250g)</span> — <span class="ex-detail">~20g proteine</span></div>
+<div class="exercise"><span class="ex-name">Fasole gătită (250g)</span> — <span class="ex-detail">~20g proteine</span></div>
+<div class="exercise"><span class="ex-name">Quinoa gătită (200g)</span> — <span class="ex-detail">~12g proteine</span></div>
+<div class="exercise"><span class="ex-name">Nuci / migdale / semințe (30g)</span> — <span class="ex-detail">~5-9g proteine + grăsimi bune</span></div>
+<div class="exercise"><span class="ex-name">Lapte de soia (250ml)</span> — <span class="ex-detail">~8g proteine</span></div>
+<div class="day-title">Exemplu de zi de post (cu sală)</div>
+<div class="exercise"><span class="ex-name">Mic dejun</span> — <span class="ex-detail">Ovăz + lapte de soia + banană + 30g nuci (~550 kcal)</span></div>
+<div class="exercise"><span class="ex-name">Prânz</span> — <span class="ex-detail">Tocăniță de linte cu orez + salată (~600 kcal)</span></div>
+<div class="exercise"><span class="ex-name">Gustare</span> — <span class="ex-detail">Iaurt de soia + semințe de dovleac (~250 kcal)</span></div>
+<div class="exercise"><span class="ex-name">Cină</span> — <span class="ex-detail">Tofu la grătar cu legume + quinoa (~600 kcal)</span></div>
+<div class="exercise"><span class="ex-name">După sală</span> — <span class="ex-detail">Shake proteic din soia/mazăre (~150 kcal)</span></div>
+<div class="note">⚠️ <b>Post negru:</b> fără sală grea — doar mobilitate și plimbare. A doua zi reia normal cu greutăți -10%.<br>💪 În post obișnuit, antrenează-te normal — soia texturată și tofu te țin la fel de puternic ca carnea.</div>`;
+
+// ===== Stretching / Mobilitate / Cardio =====
 const STRETCHING = [
   { n: "Gât și trapezi", d: "Înclină ușor capul într-o parte, ține 20 sec, apoi cealaltă parte." },
   { n: "Umeri (braț peste piept)", d: "Tragi un braț peste piept, ține 20 sec, apoi celălalt." },
@@ -177,8 +340,6 @@ const STRETCHING = [
   { n: "Cvadriceps (călcâi la fesă)", d: "Stând, tragi călcâiul spre fesă, 20 sec fiecare." },
   { n: "Gambe", d: "Piciorul întins în spate, călcâiul pe sol, 20-30 sec fiecare." }
 ];
-
-// ===== Mobilitate =====
 const MOBILITY = [
   { n: "Cat-cow", d: "În patru labe, alternezi arcuirea și rotunjirea spatelui, 10 repetări lente." },
   { n: "World's greatest stretch", d: "Fandare cu rotație de trunchi spre piciorul din față, 8 pe fiecare." },
@@ -190,8 +351,6 @@ const MOBILITY = [
   { n: "Ținut în ghemuit adânc", d: "Cât cobori în squat, ține 30-60 sec." },
   { n: "Spiderman lunge", d: "Fandare cu cotul spre sol, 8 pe fiecare parte." }
 ];
-
-// ===== Cardio =====
 const CARDIO = [
   { n: "Mers rapid (înclinat)", d: "30-45 min, ritm alert, transpiri dar poți vorbi." },
   { n: "Alergare ușoară", d: "20-30 min, ritm constant, intensitate medie." },
@@ -269,9 +428,72 @@ function showSetup() {
 }
 function renderAll() {
   renderToday(); renderMeals(); renderTraining(); renderProgress(); renderProfile();
+  renderTrainCalendar(); renderFastCalendar();
 }
 function renderDate() {
   document.getElementById('today-date').textContent = DOW[new Date().getDay()] + ' · ' + new Date().toLocaleDateString('ro-RO');
+}
+
+// Calendar periodizare (Sală)
+function renderTrainCalendar() {
+  const p = getProfile();
+  const el = document.getElementById('train-cal');
+  const st = document.getElementById('train-status');
+  if (!el) return;
+  const info = weekInfo();
+  const startWeek = info.totalWeeks - info.weekInMeso;
+  let html = '';
+  for (let i = 0; i < 8; i++) {
+    const wk = startWeek + i;
+    const meso = Math.floor(wk / 4) + 1;
+    const wIn = wk % 4;
+    const isDel = wIn === 3;
+    const cur = wk === info.totalWeeks;
+    let pmark = '';
+    if (p.sex === 'f' && p.cycle && p.cycle.last) {
+      for (let k = 0; k < 4; k++) {
+        const ps = addDays(p.cycle.last, k * (p.cycle.len || 28));
+        const wStart = addDays(p.programStart, wk * 7);
+        const wEnd = addDays(p.programStart, wk * 7 + 6);
+        if (ps >= wStart && ps <= wEnd) { pmark = '<br>🌸'; break; }
+      }
+    }
+    html += `<div class="cal-cell week ${isDel ? 'deload' : 'load'} ${cur ? 'today' : ''}">M${meso} S${wIn + 1}${pmark}</div>`;
+  }
+  el.innerHTML = html;
+  let txt = `Săptămâna <b>${info.weekInMeso + 1}</b> din Mesociclul <b>${info.meso}</b> — `;
+  txt += info.deload
+    ? '🟡 <b>DESCĂRCARE</b>: volum -40%, greutăți -10%. Lasă corpul să-și facă rezervele — NU e lene, e știință.'
+    : '🔵 <b>ÎNCĂRCARE</b>: progresiv — adaugă 1-2 kg la exercițiile principale față de săptămâna trecută.';
+  if (info.weekInMeso === 2 && !info.deload) txt += ' Săptămâna cea mai greă — dă totul!';
+  txt += `<br>🔄 Program: varianta ${info.block === 0 ? 'A' : 'B'} — se schimbă automat la fiecare 4 săptămâni.`;
+  const pi = periodInfo();
+  if (pi && pi.inPeriod) txt += '<br>🌸 <b>Perioadă menstruală</b>: antrenamente ușoare-moderate (2-3 serii, fără efort maxim). Dacă nu te simți bine, doar mobilitate.';
+  const fi = fastInfo(todayKey());
+  if (fi.black) txt += '<br>🚫 <b>Post negru</b> azi: fără sală grea — doar mobilitate/cardio foarte ușor.';
+  else if (fi.name && fi.name === "Postul Paștelui" && daysBetween(todayKey(), "2027-04-30") <= 0 && daysBetween(todayKey(), "2027-04-30") > -3) txt += '<br>🚫 Aproape de Vinerea Mare — păstrează forța, nu face eforturi maxime.';
+  st.innerHTML = txt;
+  document.getElementById('btn-period').classList.toggle('hidden', p.sex !== 'f');
+}
+
+// Calendar posturi (Mâncare)
+function renderFastCalendar() {
+  const el = document.getElementById('fast-cal');
+  if (!el) return;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const days = new Date(y, m + 1, 0).getDate();
+  let html = '';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const fi = fastInfo(ds);
+    const isToday = ds === todayKey();
+    html += `<div class="cal-cell ${fi.black ? 'black' : (fi.active ? 'fast' : '')} ${isToday ? 'today' : ''}">${d}</div>`;
+  }
+  el.innerHTML = html;
+  document.getElementById('fast-banner').innerHTML = fastBannerHTML();
+  const plan = document.getElementById('fast-plan');
+  if (plan) plan.innerHTML = FAST_PLAN_HTML;
 }
 
 function renderToday() {
@@ -296,16 +518,27 @@ function renderToday() {
   document.getElementById('recommendation').innerHTML = buildRecommendation(p, t, tot);
 
   const dow = DOW[new Date().getDay()];
+  const TRAIN = getTraining();
   const tw = document.getElementById('today-workout');
-  if (TRAINING[dow]) {
-    let html = '<div class="day-title">' + TRAINING[dow].title + '</div>';
-    TRAINING[dow].exercises.forEach(x => { html += exerciseHTML(x); });
-    html += `<div class="note">${TRAINING[dow].note}</div>`;
+  const info = weekInfo();
+  const pi = periodInfo();
+  const fi = fastInfo(todayKey());
+  let status = '';
+  status += info.deload
+    ? '<div class="note">🟡 Săptămână de <b>DESCĂRCARE</b> — volum -40%, greutăți -10%.</div>'
+    : `<div class="note">🔵 Săptămână de <b>ÎNCĂRCARE</b> (S${info.weekInMeso + 1}/4) — progresiv.</div>`;
+  if (pi && pi.inPeriod) status += '<div class="note">🌸 <b>Menstruație</b> — azi ușor: 2-3 serii, fără efort maxim.</div>';
+  if (fi.black) status += '<div class="note">🚫 <b>Post negru</b> — azi fără sală grea, doar mișcare ușoară.</div>';
+
+  if (TRAIN[dow]) {
+    let html = '<div class="day-title">' + TRAIN[dow].title + '</div>' + status;
+    TRAIN[dow].exercises.forEach(slot => { html += exerciseHTML(slot); });
+    html += `<div class="note">${TRAIN[dow].note}</div>`;
     tw.innerHTML = html;
   } else if (dow === 'Marți') {
-    tw.innerHTML = '<div class="note">🏃 Fotbal 1h30 — zi de sport, fără sală. Odihnă activă.</div>';
+    tw.innerHTML = status + '<div class="note">🏃 Fotbal 1h30 — zi de sport, fără sală. Odihnă activă.</div>';
   } else {
-    tw.innerHTML = '<div class="note">🚶 Zi de odihnă sau cardio ușor (vezi secțiunea Cardio din tab-ul Sală).</div>';
+    tw.innerHTML = status + '<div class="note">🚶 Zi de odihnă sau cardio ușor (vezi secțiunea Cardio din tab-ul Sală).</div>';
   }
 }
 
@@ -314,6 +547,10 @@ function buildRecommendation(p, t, tot) {
   const pctP = remP / t.protein, pctC = remC / t.carbs, pctF = remF / t.fat;
   const gap = Math.max(pctP, pctC, pctF);
   const cat = gap === pctP ? 'protein' : (gap === pctC ? 'carbs' : 'fat');
+  const fi = fastInfo(todayKey());
+  if (fi.active && cat === 'protein') {
+    return `Îți lipsesc ~${round1(remP)}g proteine. <b>Post</b>: ia soia texturată, tofu sau linte (vezi planul de post în tab-ul Mâncare).`;
+  }
   if (gap <= 0.05) return '✅ Ți-ai atins practic necesarul pe zi. Ai grijă doar să nu depășești mult.';
   const pick = FOODS[cat].slice(0, 2).map(f => f.n).join(' sau ');
   let text = '';
@@ -333,19 +570,23 @@ function renderMeals() {
   }).join('');
 }
 
-// Un exercitiu = nume + serie/reps + sfat + casuta kg/reps + istoric
-function exerciseHTML(x) {
-  const log = getExLog()[x.e] || [];
-  const last = lastSet(x.e);
+// Un exercitiu = nume (redenumibil) + serie/reps + sfat + casuta kg/reps + istoric
+function exerciseHTML(slot) {
+  const key = activeSlotName(slot);
+  const label = displayName(key);
+  const log = getExLog()[key] || [];
+  const last = lastSet(key);
   const hist = [...log].slice(-3).reverse().map(s =>
     `<div class="log-entry">${fmtDate(s.date)} — <b>${s.weight}kg × ${s.reps}</b></div>`
   ).join('');
-  const tips = TIPS[x.e] ? `<div class="ex-tips">💡 ${TIPS[x.e]}</div>` : '';
+  const tips = TIPS[key] ? `<div class="ex-tips">💡 ${TIPS[key]}</div>` : '';
+  const info = weekInfo();
+  const del = info.deload ? ' · <span class="dl">descărcare: mai puține serii, -10% kg</span>' : '';
   return `<div class="exercise-item">
-    <div class="ex-name">${esc(x.e)}</div>
-    <div class="ex-detail">${esc(x.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}</div>
+    <div class="ex-head"><div class="ex-name">${esc(label)}</div><button class="ex-rename" data-key="${esc(key)}" title="Redenumește">✏️</button></div>
+    <div class="ex-detail">${esc(slot.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}${del}</div>
     ${tips}
-    <div class="ex-log" data-name="${esc(x.e)}">
+    <div class="ex-log" data-key="${esc(key)}">
       <div class="inline-form log-form">
         <input type="number" class="log-weight" inputmode="decimal" placeholder="kg" />
         <input type="number" class="log-reps" inputmode="numeric" placeholder="reps" />
@@ -358,17 +599,20 @@ function exerciseHTML(x) {
 
 function renderTraining() {
   const el = document.getElementById('training-plan');
+  const TRAIN = getTraining();
+  const info = weekInfo();
 
-  let html = '<h3 class="section-h">🏋️ Antrenament (5 zile)</h3>';
-  html += Object.keys(TRAINING).map(k => {
-    const d = TRAINING[k];
+  let html = `<h3 class="section-h">🏋️ Antrenament (5 zile) — varianta ${info.block === 0 ? 'A' : 'B'}</h3>`;
+  html += Object.keys(TRAIN).map(k => {
+    const d = TRAIN[k];
     let h = `<div class="day-block"><div class="day-title">${d.title}</div>`;
-    d.exercises.forEach(x => { h += exerciseHTML(x); });
+    d.exercises.forEach(slot => { h += exerciseHTML(slot); });
     h += `<div class="note">${d.note}</div></div>`;
     return h;
   }).join('');
-  html += '<div class="note">➜ Marțea: fotbal. Duminica: cardio (vezi secțiunea Cardio).</div>';
-  html += '<div class="note">💡 Completează kg și reps sub fiecare exercițiu — se salvează și vezi istoricul.</div>';
+  html += '<div class="note">➜ Marțea: fotbal / odihnă activă. Duminica: cardio opțional.</div>';
+  html += '<div class="note">✏️ Dacă sala ta nu are aparatul, apasă creionul lângă exercițiu și redenumește-l.</div>';
+  html += '<div class="note">🔄 La fiecare 4 săptămâni exercițiile se schimbă automat (varianta A ↔ B).</div>';
 
   html += '<h3 class="section-h">🧘 Stretching (după antrenament)</h3>';
   html += STRETCHING.map(s =>
@@ -401,7 +645,7 @@ function renderProfile() {
   const p = getProfile();
   const t = computeTargets(p);
   document.getElementById('profile-view').innerHTML = `
-    <b>${p.height} cm</b> · <b>${p.weight} kg</b> · <b>${p.age} ani</b> · ${p.sex === 'm' ? 'M' : 'F'}<br>
+    <b>${p.height} cm</b> · <b>${p.weight} kg</b> · <b>${p.age} ani</b> · ${p.sex === 'm' ? 'Băiat' : 'Fată'}<br>
     Obiectiv: <b>${p.goal === 'cut' ? 'Slăbire + definire' : p.goal === 'bulk' ? 'Masă' : 'Menținere'}</b><br>
     BMR: <b>${t.bmr} kcal</b> · TDEE: <b>${t.tdee} kcal</b><br>
     Ținta zilnică: <b>${t.target} kcal</b><br>
@@ -414,9 +658,13 @@ const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.7-flash'
 
 function analyzeMeal(base64) {
   const p = getProfile();
+  const fi = fastInfo(todayKey());
+  const fastLine = fi.black ? "ATENȚIE: azi e post negru (foarte puțină mâncare) - estimează doar ce e în poză."
+    : (fi.active ? "Context: persoana ține post ortodox (fără carne, lapte, ouă, pește azi)." : "");
   const prompt = `Ești un nutriționist. Analizează această poză cu mâncare și/sau eticheta nutrițională. 
 Estimează caloriile și macro-urile (proteine, carbohidrați, grăsimi) pentru toată porția din poză.
 Dacă e o etichetă, folosește valorile de pe ea și raportează-le la porția consumată.
+${fastLine}
 Răspunde DOAR cu un obiect JSON cu exact aceste chei:
 {
   "name": "numele scurt al mesei",
@@ -480,6 +728,7 @@ function resizeImage(file, maxDim, cb) {
 document.getElementById('btn-setup').addEventListener('click', () => {
   const apikey = document.getElementById('in-apikey').value.trim();
   if (!apikey) { toast('Introdu cheia API Gemini'); return; }
+  const old = getProfile();
   const p = {
     height: parseFloat(document.getElementById('in-height').value) || 186,
     weight: parseFloat(document.getElementById('in-weight').value) || 98,
@@ -489,6 +738,8 @@ document.getElementById('btn-setup').addEventListener('click', () => {
     activity: parseFloat(document.getElementById('in-activity').value),
     apiKey: apikey
   };
+  p.programStart = (old && old.programStart) ? old.programStart : todayKey();
+  p.cycle = (old && old.cycle) ? old.cycle : { last: null, len: 28 };
   store.set('profile', p);
   showApp();
   toast('Profil salvat!');
@@ -517,7 +768,7 @@ document.getElementById('file-input').addEventListener('change', (ev) => {
       status.textContent = `✅ ${res.name} — ${res.calories} kcal (${res.confidence}). ${res.notes || ''}`;
       toast(res.name + ' adăugat!');
     }).catch(err => {
-      status.textContent = '❌ ' + err.message + ' Verifică cheia API la Setări.';
+      status.textContent = '❌ ' + err.message;
     });
   });
   ev.target.value = '';
@@ -553,6 +804,19 @@ document.getElementById('btn-edit-profile').addEventListener('click', () => {
   showSetup();
 });
 
+document.getElementById('btn-period').addEventListener('click', () => {
+  const p = getProfile();
+  if (!p.cycle) p.cycle = { last: null, len: 28 };
+  p.cycle.last = todayKey();
+  store.set('profile', p);
+  renderTrainCalendar(); renderToday();
+  toast('Înregistrat — aplicarea calculează perioadele următoare 🌸');
+});
+
+document.getElementById('btn-fast-plan').addEventListener('click', () => {
+  document.getElementById('fast-plan').classList.toggle('hidden');
+});
+
 // Navigare tab-uri
 document.querySelectorAll('nav button').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -563,22 +827,43 @@ document.querySelectorAll('nav button').forEach(btn => {
   });
 });
 
-// Delegare: buton ➕ = salvează seria
+// Delegare: buton ➕ = salvează seria; ✏️ = redenumește
 document.addEventListener('click', (ev) => {
+  const renBtn = ev.target.closest('.ex-rename');
+  if (renBtn) {
+    const key = renBtn.dataset.key;
+    const cur = displayName(key);
+    const nn = prompt('Noul nume al exercițiului (aparatul tău din sală):', cur);
+    if (nn !== null && nn.trim()) {
+      setRename(key, nn.trim());
+      renderTraining(); renderToday();
+      toast('Exercițiu redenumit ✏️');
+    }
+    return;
+  }
   const addBtn = ev.target.closest('.log-add');
-  if (!addBtn) return;
-  const log = addBtn.closest('.ex-log');
-  const name = log.dataset.name;
-  const w = parseFloat(log.querySelector('.log-weight').value);
-  const r = parseInt(log.querySelector('.log-reps').value);
-  if (!w || w <= 0 || !r || r <= 0) { toast('Completează kg și reps'); return; }
-  addSet(name, w, r);
-  renderTraining();
-  renderToday();
-  toast(`${name}: ${w}kg × ${r} salvat!`);
+  if (addBtn) {
+    const log = addBtn.closest('.ex-log');
+    const key = log.dataset.key;
+    const w = parseFloat(log.querySelector('.log-weight').value);
+    const r = parseInt(log.querySelector('.log-reps').value);
+    if (!w || w <= 0 || !r || r <= 0) { toast('Completează kg și reps'); return; }
+    addSet(key, w, r);
+    renderTraining(); renderToday();
+    toast(`${displayName(key)}: ${w}kg × ${r} salvat!`);
+  }
 });
 
 // init
+function ensureProfileFields() {
+  const p = getProfile();
+  if (!p) return;
+  let ch = false;
+  if (!p.programStart) { p.programStart = todayKey(); ch = true; }
+  if (!p.cycle) { p.cycle = { last: null, len: 28 }; ch = true; }
+  if (ch) store.set('profile', p);
+}
 renderDate();
+ensureProfileFields();
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(() => {}); }
 if (getProfile()) showApp(); else showSetup();

@@ -312,3 +312,58 @@ nav button.active {
   max-width: 90%;
   box-shadow: 0 0 22px rgba(0,229,255,0.2), 0 6px 20px rgba(0,0,0,0.5);
 }
+
+/* ===== Calendare ===== */
+.cal-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 2px 0 10px;
+  scrollbar-width: none;
+}
+.cal-strip::-webkit-scrollbar { display: none; }
+.cal-cell {
+  flex: 0 0 34px;
+  min-width: 34px;
+  text-align: center;
+  padding: 7px 0;
+  border-radius: 8px;
+  font-size: 11px;
+  background: var(--card2);
+  color: var(--muted);
+  line-height: 1.3;
+}
+.cal-cell.week {
+  flex: 0 0 52px;
+  min-width: 52px;
+  font-size: 10px;
+}
+.cal-cell.load { background: rgba(0,229,255,0.10); color: var(--accent); }
+.cal-cell.deload { background: rgba(243,201,97,0.12); color: var(--gold); }
+.cal-cell.fast { background: rgba(177,44,255,0.13); color: #c77dff; }
+.cal-cell.black { background: rgba(255,46,99,0.18); color: var(--red); }
+.cal-cell.today {
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 10px var(--glow-cyan);
+  font-weight: 700;
+}
+.cal-legend {
+  font-size: 11px;
+  color: var(--muted);
+  margin: -6px 0 10px;
+}
+.ex-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ex-rename {
+  background: transparent;
+  color: var(--muted);
+  padding: 2px 8px;
+  font-size: 14px;
+  box-shadow: none;
+}
+.ex-rename:active { transform: none; }
+.dl { color: var(--gold); font-weight: 700; }
