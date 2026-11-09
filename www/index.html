@@ -52,6 +52,17 @@
         <option value="bulk">Masă musculară</option>
       </select>
 
+      <label>Program de antrenament</label>
+      <select id="in-split">
+        <option value="full">Full Body — cel mai bun pentru slăbire</option>
+        <option value="ppl">Push / Pull / Legs (PPL) — cel mai bun pentru masă</option>
+        <option value="ul">Upper / Lower — cel mai bun pentru menținere</option>
+        <option value="arnold">Arnold Split</option>
+        <option value="bro">Bro Split (un mușchi pe zi)</option>
+        <option value="hl">Heavy-Light (greu / ușor)</option>
+      </select>
+      <p class="hint">Programul se alege singur în funcție de obiectivul tău — poți schimba oricând din Setări.</p>
+
       <label>Nivel de activitate</label>
       <select id="in-activity">
         <option value="1.55">Moderat (antrenament 3-5x/săpt)</option>
@@ -61,7 +72,9 @@
       </select>
 
       <label>Cheie API Gemini</label>
-      <input id="in-apikey" type="password" placeholder="Lipește cheia de la aistudio.google.com" />
+      <a href="https://aistudio.google.com/apikey" target="_blank" class="key-link"><button class="primary" type="button">🔗 Apasă AICI → ia cheia AI gratuită</button></a>
+      <p class="hint">Pasul 1: apasă butonul → „Get API key” → „Create” → „Copy”.<br>Pasul 2: lipește cheia în câmpul de mai jos.</p>
+      <input id="in-apikey" type="password" placeholder="Lipește cheia aici" />
       <p class="hint">Cheia se salvează doar pe telefonul tău.</p>
 
       <button id="btn-key-help" class="secondary" type="button">❓ De unde iau cheia? Pași simpli</button>
@@ -113,11 +126,17 @@
       <section id="tab-meals" class="tab">
         <div class="card">
           <h2>✝️ Calendar posturi</h2>
-          <div class="cal-strip" id="fast-cal"></div>
-          <div class="cal-legend">🟣 zile de post · 🔴 post negru · chenar = azi</div>
+          <div id="fast-cal"></div>
+          <div class="cal-legend">🟣 zile de post · 🔴 post negru · chenar = azi · derulează pentru luna anterioară, cea curentă și cea viitoare</div>
           <div id="fast-banner" class="recommendation"></div>
           <button id="btn-fast-plan" class="secondary">🥗 Planul meu de post</button>
           <div id="fast-plan" class="hidden"></div>
+        </div>
+
+        <div class="card">
+          <h2>🍏 Fructe & legume de sezon</h2>
+          <div id="seasonal-box"></div>
+          <p class="hint">Cele din sezon sunt mai proaspete și mai ieftine decât în restul anului.</p>
         </div>
 
         <button id="btn-photo" class="primary big">📷 Pozează mâncarea / eticheta</button>
@@ -134,8 +153,8 @@
       <section id="tab-training" class="tab">
         <div class="card">
           <h2>📅 Calendar periodizare</h2>
-          <div class="cal-strip" id="train-cal"></div>
-          <div class="cal-legend">🔵 încărcare · 🟡 descărcare · chenar = săptămâna curentă</div>
+          <div id="train-cal"></div>
+          <div class="cal-legend">🔵 încărcare · 🟡 descărcare · chenar = săptămâna curentă · derulează pentru 3 luni de antrenament</div>
           <div id="train-status" class="recommendation"></div>
           <button id="btn-period" class="secondary hidden">🌸 Menstruație azi (apăsă când începe)</button>
         </div>
@@ -160,12 +179,24 @@
       <!-- TAB: CHAT -->
       <section id="tab-chat" class="tab">
         <div class="card">
-          <h2>🤖 Antrenorul AI</h2>
-          <button id="btn-ai-coach" class="primary">💪 Chat cu antrenorul meu AI</button>
-          <button id="btn-ai-zozo" class="secondary">⭐ ZOZO — expert fitness & nutriție</button>
-          <p class="hint">Antrenorul AI are un program special pentru obiectivul tău (slăbire / masă / menținere) și se schimbă automat când schimbi obiectivul din Setări. ZOZO vorbește strict despre fitness. Ai nevoie de internet. Conversația se salvează pe telefonul tău.</p>
+          <h2>💬 Cu cine vrei să vorbești?</h2>
+          <div class="chat-menu">
+            <button class="chat-menu-item" id="btn-ai-coach" type="button">
+              <span class="cm-emoji">💪</span>
+              <span class="cm-txt"><span class="cm-title">Antrenorul meu AI</span><span class="cm-sub">Personalizat pe obiectivul și datele tale</span></span>
+            </button>
+            <button class="chat-menu-item" id="btn-ai-zozo" type="button">
+              <span class="cm-emoji">⭐</span>
+              <span class="cm-txt"><span class="cm-title">ZOZO</span><span class="cm-sub">Expert în fitness, sport și nutriție</span></span>
+            </button>
+            <button class="chat-menu-item" id="btn-ai-room" type="button">
+              <span class="cm-emoji">🗣️</span>
+              <span class="cm-txt"><span class="cm-title">Chat Antrenor ↔ Elev</span><span class="cm-sub">Camere cu cod de invitație — cu soția sau elevii tăi</span></span>
+            </button>
+          </div>
+          <p class="hint">Chatul cu AI și camerele au nevoie de internet. Conversațiile se salvează pe telefonul tău.</p>
         </div>
-        <div id="chat-lobby" class="card">
+        <div id="chat-lobby" class="card hidden">
           <h2>💬 Chat Antrenor ↔ Elev</h2>
           <label>Numele tău în chat</label>
           <input id="chat-name" type="text" placeholder="ex: Daniel / Ana" />

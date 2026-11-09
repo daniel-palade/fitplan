@@ -230,10 +230,172 @@ const TRAINING_F = {
   }
 };
 
+// ===== Sistem de programe (splits) — personalizate pe obiectiv =====
+const POOL = {
+  chest: [
+    { a: "Împins din piept cu bara", b: "Împins din piept cu gantere", d: "4 × 6-10" },
+    { a: "Împins înclinat cu gantere", b: "Împins înclinat cu bara", d: "3 × 8-12" },
+    { a: "Fluturări cu gantere", b: "Fluturări la cablu", d: "3 × 12-15" },
+    { a: "Fluturări la aparat (pec deck)", b: "Dips (piept)", d: "3 × 12-15" }
+  ],
+  back: [
+    { a: "Tracțiuni la bară", b: "Tracțiuni la aparat (lat pulldown)", d: "4 × 6-12" },
+    { a: "Ramat cu bara", b: "Ramat la cablu (seated row)", d: "4 × 8-12" },
+    { a: "Ramat cu gantera (un braț)", b: "Îndreptări cu bara (deadlift)", d: "3 × 8-12" },
+    { a: "Ridicări trapez (shrugs)", d: "3 × 12-15" }
+  ],
+  shoulders: [
+    { a: "Împins la umeri cu bara", b: "Împins la umeri cu gantere", d: "3 × 8-12" },
+    { a: "Fluturări laterale", b: "Ridicare la bărbie", d: "3 × 12-15" },
+    { a: "Împins la umeri cu gantere", b: "Fluturări la aparat lateral", d: "3 × 10-12" }
+  ],
+  triceps: [
+    { a: "Împins triceps la cablu (pushdown)", b: "Extensii cu bara EZ (skull crusher)", d: "3 × 10-15" },
+    { a: "Dips (triceps)", b: "Flotări cu priză îngustă", d: "3 × 10-12" },
+    { a: "Extensii cu gantera (peste cap)", b: "Împins triceps la cablu (pushdown)", d: "3 × 12-15" }
+  ],
+  biceps: [
+    { a: "Curl cu bara", b: "Curl cu gantere alternativ", d: "3 × 10-12" },
+    { a: "Curl ciocam (hammer)", b: "Curl la cablu", d: "3 × 10-12" },
+    { a: "Curl concentrat", b: "Curl cu gantere alternativ", d: "3 × 12" }
+  ],
+  rear: [
+    { a: "Fluturări spate (rear delt)", b: "Face pull la cablu", d: "3 × 12-15" },
+    { a: "Face pull la cablu", b: "Fluturări spate (rear delt)", d: "3 × 15" }
+  ],
+  quads: [
+    { a: "Genuflexiuni cu bara (squat)", b: "Genuflexiuni frontale cu bara", d: "4 × 6-10" },
+    { a: "Împins la presă (leg press)", b: "Fandări bulgărești (split squat)", d: "4 × 10-15" },
+    { a: "Fandări (lunges)", b: "Genuflexiuni la aparat (hack squat)", d: "3 × 10-12" },
+    { a: "Extensii cvadriceps", b: "Step-up pe bancă", d: "3 × 12-15" }
+  ],
+  hams: [
+    { a: "Îndreptări românești (RDL)", b: "Îndreptări cu bara (deadlift)", d: "4 × 8-12" },
+    { a: "Flexii biceps femural", b: "Îndreptări românești (RDL)", d: "3 × 12-15" }
+  ],
+  glutes: [
+    { a: "Hip thrust", b: "Glute bridge cu bara", d: "3 × 8-12" },
+    { a: "Fandări invers", b: "Kickback la cablu", d: "3 × 10-12" },
+    { a: "Abducții la aparat", b: "Abducții cu bandă elastică", d: "3 × 15" }
+  ],
+  calves: [
+    { a: "Ridicări pe gambe", d: "4 × 12-15" }
+  ],
+  core: [
+    { a: "Plank", b: "Dead bug", d: "3 × 30-60 sec" },
+    { a: "Ridicări de picioare", b: "Twist rusesc", d: "3 × 12-15" },
+    { a: "Dead bug", b: "Bird dog", d: "3 × 10" },
+    { a: "Bird dog", b: "Plank", d: "3 × 10" }
+  ]
+};
+
+const SPLIT_TEMPLATES = {
+  ul: {
+    Luni: ["chest", "back", "shoulders", "biceps", "triceps"],
+    Miercuri: ["quads", "hams", "glutes", "calves", "core"],
+    Joi: ["back", "chest", "shoulders", "triceps", "biceps"],
+    Vineri: ["quads", "glutes", "hams", "calves", "core"],
+    Sâmbătă: ["chest", "back", "shoulders", "core", "core"]
+  },
+  arnold: {
+    Luni: ["chest", "chest", "back", "back", "shoulders"],
+    Miercuri: ["shoulders", "shoulders", "triceps", "biceps", "core"],
+    Joi: ["quads", "quads", "hams", "calves", "core"],
+    Vineri: ["chest", "back", "back", "shoulders", "triceps"],
+    Sâmbătă: ["biceps", "triceps", "shoulders", "core", "calves"]
+  },
+  full: {
+    Luni: ["chest", "back", "quads", "core", "calves"],
+    Miercuri: ["shoulders", "back", "hams", "biceps", "core"],
+    Joi: ["chest", "back", "quads", "triceps", "core"],
+    Vineri: ["shoulders", "chest", "hams", "biceps", "calves"],
+    Sâmbătă: ["back", "chest", "glutes", "triceps", "core"]
+  },
+  bro: {
+    Luni: ["chest", "chest", "chest", "triceps", "triceps"],
+    Miercuri: ["back", "back", "back", "rear", "biceps"],
+    Joi: ["quads", "quads", "hams", "glutes", "calves"],
+    Vineri: ["shoulders", "shoulders", "rear", "triceps", "core"],
+    Sâmbătă: ["biceps", "biceps", "triceps", "triceps", "core"]
+  },
+  hl: {
+    Luni: ["chest", "back", "shoulders", "biceps", "triceps"],
+    Miercuri: ["quads", "hams", "glutes", "calves", "core"],
+    Joi: ["chest", "back", "shoulders", "triceps", "biceps"],
+    Vineri: ["quads", "hams", "glutes", "calves", "core"],
+    Sâmbătă: ["chest", "back", "shoulders", "core", "core"]
+  }
+};
+
+const SPLIT_TITLES = {
+  ul: { Luni: "Upper A (piept, spate, umeri)", Miercuri: "Lower A (picioare)", Joi: "Upper B", Vineri: "Lower B", Sâmbătă: "Full Body ușor + Core" },
+  arnold: { Luni: "Piept + Spate", Miercuri: "Umeri + Brațe", Joi: "Picioare", Vineri: "Piept + Spate (2)", Sâmbătă: "Brațe + Core" },
+  full: { Luni: "Full Body A", Miercuri: "Full Body B", Joi: "Full Body C", Vineri: "Full Body D", Sâmbătă: "Full Body E" },
+  bro: { Luni: "Piept + Triceps", Miercuri: "Spate + Biceps", Joi: "Picioare", Vineri: "Umeri", Sâmbătă: "Brațe (biceps + triceps)" },
+  hl: { Luni: "Upper GREU", Miercuri: "Lower GREU", Joi: "Upper UȘOR", Vineri: "Lower UȘOR", Sâmbătă: "Pump + Core" }
+};
+
+const SPLIT_META = {
+  ppl: { name: "Push / Pull / Legs (PPL)", why: "Cel mai popular pentru MASĂ MUSCULARĂ — volum mare pe fiecare mușchi." },
+  ul: { name: "Upper / Lower", why: "Echilibru perfect — recomandat pentru MENȚINERE." },
+  arnold: { name: "Arnold Split", why: "Clasicul lui Arnold — volum mare, pentru cei experimentați." },
+  full: { name: "Full Body", why: "Cea mai bună alegere pentru SLĂBIRE — arzi mult la fiecare antrenament." },
+  bro: { name: "Bro Split", why: "Un mușchi pe zi — clasic de sală, volum mare pe mușchi." },
+  hl: { name: "Heavy-Light", why: "Zile grele alternând cu ușoare — bun pentru forță și recuperare." }
+};
+
+function defaultSplit(goal) {
+  return goal === 'cut' ? 'full' : goal === 'bulk' ? 'ppl' : 'ul';
+}
+
+function buildProgram(key, p) {
+  const tmpl = SPLIT_TEMPLATES[key];
+  if (!tmpl) return null;
+  const titles = SPLIT_TITLES[key];
+  const block = weekInfo().block;
+  const out = {};
+  Object.keys(tmpl).forEach(day => {
+    let cats = tmpl[day].slice();
+    if (p.sex === 'f') {
+      // accent pe fesieri la fete: excedentul de piept/brațe devine fesieri/core
+      let chestCount = 0, bicepCount = 0, triCount = 0;
+      cats = cats.map(c => {
+        if (c === 'chest') { chestCount++; if (chestCount > 1) return 'glutes'; }
+        if (c === 'biceps') { bicepCount++; if (bicepCount > 1) return 'core'; }
+        if (c === 'triceps') { triCount++; if (triCount > 1) return 'core'; }
+        return c;
+      });
+    }
+    const used = {};
+    const exs = cats.map((cat, i) => {
+      const pool = POOL[cat] || [];
+      if (!pool.length) return null;
+      used[cat] = used[cat] || 0;
+      const idx = (block + i + used[cat]) % pool.length;
+      used[cat]++;
+      const pick = pool[idx];
+      return { a: pick.a, b: pick.b, d: pick.d };
+    }).filter(Boolean);
+    const goalNote = p.goal === 'cut'
+      ? 'Slăbire: menține greutățile, odihnă 60-90 sec, la final 10-15 min cardio ușor.'
+      : p.goal === 'bulk'
+        ? 'Masă: supraîncărcare progresivă — când faci toate reps, +1-2 kg data viitoare.'
+        : 'Menținere: formă bună, greutăți constante, plăcere.';
+    out[day] = { title: day + " — " + titles[day], note: goalNote, exercises: exs };
+  });
+  return out;
+}
+
 const DOW = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
 function getTraining() {
   const p = getProfile();
-  return p && p.sex === 'f' ? TRAINING_F : TRAINING_M;
+  if (!p) return TRAINING_M;
+  const key = p.split || defaultSplit(p.goal);
+  if (key === 'ppl' || !SPLIT_TEMPLATES[key]) {
+    // PPL foloseste programele detaliate (cu varianta feminina)
+    return p.sex === 'f' ? TRAINING_F : TRAINING_M;
+  }
+  return buildProgram(key, p);
 }
 
 // ===== Periodizare (3 saptamani incarcare + 1 descarcare) =====
@@ -429,8 +591,7 @@ function showSetup() {
 }
 function renderAll() {
   renderToday(); renderMeals(); renderTraining(); renderProgress(); renderProfile();
-  renderTrainCalendar(); renderFastCalendar();
-  if (chatMode === null) showChatLobby();
+  renderTrainCalendar(); renderFastCalendar(); renderSeasonal();
 }
 function renderDate() {
   document.getElementById('today-date').textContent = DOW[new Date().getDay()] + ' · ' + new Date().toLocaleDateString('ro-RO');
@@ -449,11 +610,17 @@ function renderTrainCalendar() {
   const st = document.getElementById('train-status');
   if (!el) return;
   const info = weekInfo();
-  const startWeek = info.totalWeeks - info.weekInMeso;
+  const startWeek = Math.max(0, info.totalWeeks - info.weekInMeso - 4);
   let html = '';
-  for (let i = 0; i < 8; i++) {
+  let lastMeso = -1;
+  for (let i = 0; i < 12; i++) {
     const wk = startWeek + i;
     const meso = Math.floor(wk / 4) + 1;
+    if (meso !== lastMeso) {
+      if (lastMeso !== -1) html += '</div>';
+      html += `<div class="month-title">📦 Mesociclul ${meso}</div><div class="cal-grid weeks">`;
+      lastMeso = meso;
+    }
     const wIn = wk % 4;
     const isDel = wIn === 3;
     const cur = wk === info.totalWeeks;
@@ -466,8 +633,9 @@ function renderTrainCalendar() {
         if (ps >= wStart && ps <= wEnd) { pmark = '<br>🌸'; break; }
       }
     }
-    html += `<div class="cal-cell week ${isDel ? 'deload' : 'load'} ${cur ? 'today' : ''}">M${meso} S${wIn + 1}${pmark}</div>`;
+    html += `<div class="cal-g week ${isDel ? 'deload' : 'load'} ${cur ? 'today' : ''}">S${wIn + 1}${pmark}</div>`;
   }
+  html += '</div>';
   el.innerHTML = html;
   let txt = `Săptămâna <b>${info.weekInMeso + 1}</b> din Mesociclul <b>${info.meso}</b> — `;
   txt += info.deload
@@ -484,21 +652,66 @@ function renderTrainCalendar() {
   document.getElementById('btn-period').classList.toggle('hidden', p.sex !== 'f');
 }
 
-// Calendar posturi (Mâncare)
+// ===== Calendare: luni + sezon =====
+const MONTHS_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+
+const SEASONAL = {
+  1: { fructe: ["mere", "pere", "gutui", "portocale", "mandarine", "kiwi"], legume: ["varză", "cartofi", "morcovi", "păstârnac", "sfeclă", "praz", "conopidă", "broccoli", "ceapă", "usturoi"] },
+  2: { fructe: ["mere", "pere", "gutui", "portocale", "mandarine", "kiwi", "lămâi"], legume: ["varză", "cartofi", "morcovi", "sfeclă", "praz", "spanac", "conopidă", "broccoli", "ceapă", "usturoi"] },
+  3: { fructe: ["mere", "pere", "portocale", "lămâi", "kiwi"], legume: ["salată verde", "spanac", "ceapă verde", "urzici", "ridichi", "conopidă", "broccoli", "morcovi"] },
+  4: { fructe: ["mere", "căpșuni", "lămâi"], legume: ["salată verde", "spanac", "ceapă verde", "urzici", "ridichi", "mărar", "broccoli", "conopidă"] },
+  5: { fructe: ["căpșuni", "cireșe"], legume: ["salată verde", "spanac", "ridichi", "ceapă verde", "mazăre", "usturoi verde", "ștevie", "lobodă"] },
+  6: { fructe: ["căpșuni", "cireșe", "vișine", "piersici"], legume: ["salată", "mazăre", "fasole verde", "dovlecel", "spanac", "ardei gras", "mărar"] },
+  7: { fructe: ["cireșe", "vișine", "piersici", "caise", "afine", "zmeură", "pepene verde"], legume: ["roșii", "castraveți", "ardei", "vinete", "dovlecei", "fasole verde", "porumb"] },
+  8: { fructe: ["piersici", "caise", "prune", "afine", "zmeură", "gutui", "pepene verde", "pepene roșu"], legume: ["roșii", "castraveți", "ardei", "vinete", "porumb", "morcovi tineri", "fasole verde"] },
+  9: { fructe: ["struguri", "prune", "mere", "pere", "gutui", "nuci"], legume: ["roșii", "ardei", "vinete", "dovleac", "conopidă", "varză", "broccoli", "ciuperci"] },
+  10: { fructe: ["mere", "pere", "gutui", "struguri", "nuci"], legume: ["dovleac", "cartofi", "varză", "conopidă", "broccoli", "sfeclă", "morcovi", "hrean"] },
+  11: { fructe: ["mere", "pere", "gutui", "nuci", "cătină"], legume: ["varză", "cartofi", "morcovi", "sfeclă", "praz", "ceapă", "usturoi", "dovleac", "spanac"] },
+  12: { fructe: ["mere", "pere", "gutui", "portocale", "mandarine", "nuci"], legume: ["varză", "cartofi", "morcovi", "sfeclă", "praz", "ceapă", "usturoi", "dovleac", "conopidă"] }
+};
+
+function renderSeasonal() {
+  const el = document.getElementById('seasonal-box');
+  if (!el) return;
+  const m = new Date().getMonth() + 1;
+  const s = SEASONAL[m];
+  const mname = MONTHS_RO[m - 1];
+  const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+  el.innerHTML = `
+    <div class="note">În <b>${mname}</b>, astea sunt proaspete și ieftine:</div>
+    <div class="day-title">🍓 Fructe</div>
+    ${s.fructe.map(f => `<div class="exercise"><span class="ex-name">${cap(f)}</span></div>`).join('')}
+    <div class="day-title">🥕 Legume</div>
+    ${s.legume.map(f => `<div class="exercise"><span class="ex-name">${cap(f)}</span></div>`).join('')}`;
+}
+
+// Calendar posturi (Mâncare) — 3 luni
+function monthGridHTML(y, m) {
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
+  let cells = '<div class="cal-dow"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="cal-grid">';
+  for (let i = 0; i < firstDow; i++) cells += '<div class="cal-g empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const fi = fastInfo(ds);
+    const isToday = ds === todayKey();
+    cells += `<div class="cal-g ${fi.black ? 'black' : (fi.active ? 'fast' : '')} ${isToday ? 'today' : ''}">${d}</div>`;
+  }
+  cells += '</div>';
+  const title = MONTHS_RO[m].charAt(0).toUpperCase() + MONTHS_RO[m].slice(1) + ' ' + y;
+  return `<div class="month-block"><div class="month-title">🗓️ ${title}</div>${cells}</div>`;
+}
+
 function renderFastCalendar() {
   const el = document.getElementById('fast-cal');
   if (!el) return;
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth();
-  const days = new Date(y, m + 1, 0).getDate();
-  let html = '';
-  for (let d = 1; d <= days; d++) {
-    const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const fi = fastInfo(ds);
-    const isToday = ds === todayKey();
-    html += `<div class="cal-cell ${fi.black ? 'black' : (fi.active ? 'fast' : '')} ${isToday ? 'today' : ''}">${d}</div>`;
-  }
-  el.innerHTML = html;
+  let pm = m - 1, py = y;
+  if (pm < 0) { pm = 11; py = y - 1; }
+  let nm = m + 1, ny = y;
+  if (nm > 11) { nm = 0; ny = y + 1; }
+  el.innerHTML = monthGridHTML(py, pm) + monthGridHTML(y, m) + monthGridHTML(ny, nm);
   document.getElementById('fast-banner').innerHTML = fastBannerHTML();
   const plan = document.getElementById('fast-plan');
   if (plan) plan.innerHTML = FAST_PLAN_HTML;
@@ -661,6 +874,7 @@ function renderProfile() {
   document.getElementById('profile-view').innerHTML = `
     <b>${p.height} cm</b> · <b>${p.weight} kg</b> · <b>${p.age} ani</b> · ${p.sex === 'm' ? 'Băiat' : 'Fată'}<br>
     Obiectiv: <b>${p.goal === 'cut' ? 'Slăbire + definire' : p.goal === 'bulk' ? 'Masă' : 'Menținere'}</b><br>
+    Program: <b>${SPLIT_META[(p.split || defaultSplit(p.goal))].name}</b> — ${SPLIT_META[(p.split || defaultSplit(p.goal))].why}<br>
     BMR: <b>${t.bmr} kcal</b> · TDEE: <b>${t.tdee} kcal</b><br>
     Ținta zilnică: <b>${t.target} kcal</b><br>
     Proteine <b>${t.protein}g</b> · Carbo <b>${t.carbs}g</b> · Grăsimi <b>${t.fat}g</b>
@@ -750,6 +964,7 @@ document.getElementById('btn-setup').addEventListener('click', () => {
     age: parseInt(document.getElementById('in-age').value) || 27,
     sex: document.getElementById('in-sex').value,
     goal: document.getElementById('in-goal').value,
+    split: document.getElementById('in-split').value || defaultSplit(document.getElementById('in-goal').value),
     activity: parseFloat(document.getElementById('in-activity').value),
     apiKey: apikey
   };
@@ -815,6 +1030,7 @@ document.getElementById('btn-edit-profile').addEventListener('click', () => {
   document.getElementById('in-age').value = p.age;
   document.getElementById('in-sex').value = p.sex;
   document.getElementById('in-goal').value = p.goal;
+  document.getElementById('in-split').value = p.split || defaultSplit(p.goal);
   document.getElementById('in-activity').value = String(p.activity);
   document.getElementById('in-apikey').value = p.apiKey;
   showSetup();
@@ -835,6 +1051,13 @@ document.getElementById('btn-fast-plan').addEventListener('click', () => {
 
 document.getElementById('btn-key-help').addEventListener('click', () => {
   document.getElementById('key-help').classList.toggle('hidden');
+});
+
+// Recomandare automata a programului in functie de obiectiv
+document.getElementById('in-goal').addEventListener('change', () => {
+  const g = document.getElementById('in-goal').value;
+  document.getElementById('in-split').value = defaultSplit(g);
+  toast('Am ales programul recomandat pentru obiectivul tău');
 });
 
 // Preview tema cand selectezi sexul in setup
@@ -1006,6 +1229,7 @@ function showChatLobby() {
   chatMode = null;
   aiTyping = false;
   if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+  document.getElementById('chat-room').classList.add('hidden');
   const c = getChat();
   document.getElementById('chat-name').value = c.name || '';
   const roomsEl = document.getElementById('chat-rooms');
@@ -1015,7 +1239,14 @@ function showChatLobby() {
       ).join('')
     : '';
   document.getElementById('chat-lobby').classList.remove('hidden');
+}
+
+function closeChat() {
+  chatMode = null;
+  aiTyping = false;
+  if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
   document.getElementById('chat-room').classList.add('hidden');
+  document.getElementById('chat-lobby').classList.add('hidden');
 }
 
 function openRoomChat() {
@@ -1141,7 +1372,7 @@ function renderAIChat() {
   }
   let html = hist.slice(-60).map(m => chatBubble(m, m.role === 'user', aiName)).join('');
   if (aiTyping) {
-    html += `<div class="msg other"><div class="msg-user">${aiName}</div><div class="msg-text">scrie...</div></div>`;
+    html += `<div class="msg other"><div class="msg-user">${aiName} scrie...</div><div class="msg-text"><span class="typing"><span></span><span></span><span></span></span></div></div>`;
   }
   el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
@@ -1204,10 +1435,11 @@ document.getElementById('btn-chat-show-join').addEventListener('click', () => {
 document.getElementById('btn-chat-join').addEventListener('click', chatJoin);
 document.getElementById('btn-ai-coach').addEventListener('click', () => openAIChat('coach'));
 document.getElementById('btn-ai-zozo').addEventListener('click', () => openAIChat('zozo'));
+document.getElementById('btn-ai-room').addEventListener('click', () => showChatLobby());
 document.getElementById('btn-chat-send').addEventListener('click', doSend);
 document.getElementById('chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend(); });
 document.getElementById('btn-chat-leave').addEventListener('click', () => {
-  const c = getChat(); c.active = null; setChat(c); showChatLobby();
+  const c = getChat(); c.active = null; setChat(c); closeChat();
 });
 
 // init
