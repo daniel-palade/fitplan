@@ -41,17 +41,7 @@ jobs:
       - name: Pre-download Gradle (cu reincercari)
         run: |
           URL="https://services.gradle.org/distributions/gradle-8.2.1-all.zip"
-          HASH=$(python3 -c "
-import hashlib
-h = hashlib.md5('$URL'.encode()).digest()
-n = int.from_bytes(h, 'big')
-chars = '0123456789abcdefghijklmnopqrstuvwxyz'
-out = ''
-while n > 0:
-    n, r = divmod(n, 36)
-    out = chars[r] + out
-print(out)")
-          DIR="$HOME/.gradle/wrapper/dists/gradle-8.2.1-all/$HASH"
+          DIR="$HOME/.gradle/wrapper/dists/gradle-8.2.1-all/d8pvvlun5bx6sdtwqhf8y9z4b"
           if [ -f "$DIR/gradle-8.2.1-all.zip.ok" ]; then
             echo "Gradle deja prezent din cache."
             exit 0
