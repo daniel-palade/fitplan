@@ -306,10 +306,10 @@ const SPLIT_TEMPLATES = {
   },
   full: {
     Luni: ["chest", "back", "quads", "core", "calves"],
-    Miercuri: ["shoulders", "back", "hams", "biceps", "core"],
-    Joi: ["chest", "back", "quads", "triceps", "core"],
-    Vineri: ["shoulders", "chest", "hams", "biceps", "calves"],
-    Sâmbătă: ["back", "chest", "glutes", "triceps", "core"]
+    Miercuri: ["back", "shoulders", "hams", "glutes", "core"],
+    Joi: ["chest", "back", "quads", "biceps", "triceps"],
+    Vineri: ["shoulders", "back", "hams", "glutes", "core"],
+    Sâmbătă: ["quads", "glutes", "biceps", "core", "calves"]
   },
   bro: {
     Luni: ["chest", "chest", "chest", "triceps", "triceps"],
@@ -354,6 +354,7 @@ function buildProgram(key, p) {
   const titles = SPLIT_TITLES[key];
   const block = weekInfo().block;
   const out = {};
+  const catCursor = {};
   Object.keys(tmpl).forEach(day => {
     let cats = tmpl[day].slice();
     if (p.sex === 'f') {
@@ -366,13 +367,12 @@ function buildProgram(key, p) {
         return c;
       });
     }
-    const used = {};
-    const exs = cats.map((cat, i) => {
+    const exs = cats.map(cat => {
       const pool = POOL[cat] || [];
       if (!pool.length) return null;
-      used[cat] = used[cat] || 0;
-      const idx = (block + i + used[cat]) % pool.length;
-      used[cat]++;
+      catCursor[cat] = catCursor[cat] || 0;
+      const idx = (block + catCursor[cat]) % pool.length;
+      catCursor[cat]++;
       const pick = pool[idx];
       return { a: pick.a, b: pick.b, d: pick.d };
     }).filter(Boolean);

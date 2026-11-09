@@ -1,4 +1,4 @@
-const CACHE = 'zozo-v11';
+const CACHE = 'zozo-v12';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
