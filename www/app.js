@@ -341,7 +341,8 @@ const SPLIT_META = {
   arnold: { name: "Arnold Split", why: "Clasicul lui Arnold — volum mare, pentru cei experimentați." },
   full: { name: "Full Body", why: "Cea mai bună alegere pentru SLĂBIRE — arzi mult la fiecare antrenament." },
   bro: { name: "Bro Split", why: "Un mușchi pe zi — clasic de sală, volum mare pe mușchi." },
-  hl: { name: "Heavy-Light", why: "Zile grele alternând cu ușoare — bun pentru forță și recuperare." }
+  hl: { name: "Heavy-Light", why: "Zile grele alternând cu ușoare — bun pentru forță și recuperare." },
+  custom: { name: "Programul meu (personalizat)", why: "Îl construiești tu — zile, exerciții, serii, fix cum vrei." }
 };
 
 function defaultSplit(goal) {
@@ -387,10 +388,27 @@ function buildProgram(key, p) {
 }
 
 const DOW = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+function getCustomProgram() { return store.get('customProgram', {}); }
+function setCustomProgram(cp) { store.set('customProgram', cp); }
+
+function buildCustom() {
+  const cp = getCustomProgram();
+  const out = {};
+  Object.keys(cp).forEach(day => {
+    out[day] = {
+      title: cp[day].title || day,
+      note: 'Programul tău personal — construiește-l cum vrei tu.',
+      exercises: cp[day].exercises || []
+    };
+  });
+  return out;
+}
+
 function getTraining() {
   const p = getProfile();
   if (!p) return TRAINING_M;
   const key = p.split || defaultSplit(p.goal);
+  if (key === 'custom') return buildCustom();
   if (key === 'ppl' || !SPLIT_TEMPLATES[key]) {
     // PPL foloseste programele detaliate (cu varianta feminina)
     return p.sex === 'f' ? TRAINING_F : TRAINING_M;
@@ -946,12 +964,46 @@ function exerciseHTML(slot) {
   </div>`;
 }
 
+// Editor program personalizat
+function renderCustomEditor() {
+  const cp = getCustomProgram();
+  const el = document.getElementById('custom-days');
+  if (!Object.keys(cp).length) {
+    el.innerHTML = '<div class="note">Programul tău e gol. Apasă „➕ Adaugă o zi" și construiește-l fix cum vrei tu: alegi zilele, exercițiile și seriile.</div>';
+    return;
+  }
+  el.innerHTML = Object.keys(cp).map(day => {
+    const d = cp[day];
+    const exs = (d.exercises || []).map((e, i) =>
+      `<div class="exercise"><span class="ex-name">${esc(e.a)}</span> — <span class="ex-detail">${esc(e.d || '')}</span>
+        <button class="ce-btn ce-del-ex" data-day="${esc(day)}" data-i="${i}" type="button">🗑️</button></div>`
+    ).join('');
+    return `<div class="day-block">
+      <div class="day-title">${esc(day)} — ${esc(d.title || '')}
+        <button class="ce-btn ce-del-day" data-day="${esc(day)}" type="button">🗑️ ziua</button>
+        <button class="ce-btn ce-ren-day" data-day="${esc(day)}" type="button">✏️ titlu</button>
+      </div>
+      ${exs}
+      <button class="ce-btn ce-add-ex" data-day="${esc(day)}" type="button">➕ Adaugă exercițiu</button>
+    </div>`;
+  }).join('');
+}
+
 function renderTraining() {
   const el = document.getElementById('training-plan');
+  const p = getProfile();
   const TRAIN = getTraining();
   const info = weekInfo();
+  const isCustom = p && p.split === 'custom';
 
-  let html = `<h3 class="section-h">🏋️ Antrenament (5 zile) — varianta ${info.block === 0 ? 'A' : 'B'}</h3>`;
+  document.getElementById('btn-custom-edit').classList.toggle('hidden', !isCustom);
+
+  let html = isCustom
+    ? '<h3 class="section-h">🏋️ Programul meu personalizat</h3>'
+    : `<h3 class="section-h">🏋️ Antrenament (5 zile) — varianta ${info.block === 0 ? 'A' : 'B'}</h3>`;
+  if (isCustom && !Object.keys(TRAIN).length) {
+    html += '<div class="note">✏️ Programul tău e gol. Apasă butonul „✏️ Editează programul meu" de sus și construiește-l fix cum vrei: zile, exerciții, serii.</div>';
+  }
   html += Object.keys(TRAIN).map(k => {
     const d = TRAIN[k];
     let h = `<div class="day-block"><div class="day-title">${d.title}</div>`;
@@ -1244,6 +1296,32 @@ document.getElementById('btn-fast-plan').addEventListener('click', () => {
   document.getElementById('fast-plan').classList.toggle('hidden');
 });
 
+document.getElementById('btn-custom-edit').addEventListener('click', () => {
+  renderCustomEditor();
+  document.getElementById('custom-editor').classList.remove('hidden');
+  document.getElementById('custom-editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+document.getElementById('btn-custom-done').addEventListener('click', () => {
+  document.getElementById('custom-editor').classList.add('hidden');
+  renderTraining(); renderToday(); renderTrainCalendar();
+  toast('Programul tău e salvat! ✅');
+});
+
+document.getElementById('btn-custom-add-day').addEventListener('click', () => {
+  const raw = prompt('Ziua (scrie una din): ' + DOW.join(', '), 'Luni');
+  if (!raw) return;
+  const day = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
+  if (!DOW.includes(day)) { toast('Ziua nu e validă — scrie ex: Luni'); return; }
+  const cp = getCustomProgram();
+  if (cp[day]) { toast('Ziua există deja — șterge-o întâi dacă vrei să o refaci'); return; }
+  const title = prompt('Titlul zilei (ex: Picioare grele):', day + ' — antrenamentul meu');
+  cp[day] = { title: (title && title.trim()) || (day + ' — antrenamentul meu'), exercises: [] };
+  setCustomProgram(cp);
+  renderCustomEditor();
+  toast('Zi adăugată! Acum adaugă exerciții.');
+});
+
 document.getElementById('btn-cal-size').addEventListener('click', () => {
   const cal = document.getElementById('fast-cal');
   cal.classList.toggle('compact');
@@ -1297,6 +1375,58 @@ document.addEventListener('click', (ev) => {
     c.active = chatRow.dataset.code;
     setChat(c);
     openRoomChat();
+    return;
+  }
+  const ceAdd = ev.target.closest('.ce-add-ex');
+  if (ceAdd) {
+    const day = ceAdd.dataset.day;
+    const v = prompt('Exercițiul (nume | serii × repetări):', 'Împins din piept cu bara | 4 × 8-12');
+    if (!v) return;
+    const parts = v.split('|').map(x => x.trim());
+    const cp = getCustomProgram();
+    if (!cp[day]) return;
+    cp[day].exercises.push({ a: parts[0] || 'Exercițiu', d: parts[1] || '3 × 10' });
+    setCustomProgram(cp);
+    renderCustomEditor();
+    toast('Exercițiu adăugat!');
+    return;
+  }
+  const ceDelEx = ev.target.closest('.ce-del-ex');
+  if (ceDelEx) {
+    const day = ceDelEx.dataset.day;
+    const i = parseInt(ceDelEx.dataset.i);
+    const cp = getCustomProgram();
+    if (cp[day] && cp[day].exercises[i] && confirm('Ștergi „' + cp[day].exercises[i].a + '"?')) {
+      cp[day].exercises.splice(i, 1);
+      setCustomProgram(cp);
+      renderCustomEditor();
+      toast('Șters!');
+    }
+    return;
+  }
+  const ceRenDay = ev.target.closest('.ce-ren-day');
+  if (ceRenDay) {
+    const day = ceRenDay.dataset.day;
+    const cp = getCustomProgram();
+    const t = prompt('Titlul zilei:', cp[day] ? cp[day].title : day);
+    if (t && t.trim() && cp[day]) {
+      cp[day].title = t.trim();
+      setCustomProgram(cp);
+      renderCustomEditor();
+      toast('Titlu schimbat!');
+    }
+    return;
+  }
+  const ceDelDay = ev.target.closest('.ce-del-day');
+  if (ceDelDay) {
+    const day = ceDelDay.dataset.day;
+    const cp = getCustomProgram();
+    if (cp[day] && confirm('Ștergi ziua ' + day + ' (cu toate exercițiile)?')) {
+      delete cp[day];
+      setCustomProgram(cp);
+      renderCustomEditor();
+      toast('Zi ștearsă!');
+    }
     return;
   }
   const calDay = ev.target.closest('.cal-g[data-ds]');

@@ -59,6 +59,7 @@
         <option value="arnold">Arnold Split</option>
         <option value="bro">Bro Split (un mușchi pe zi)</option>
         <option value="hl">Heavy-Light (greu / ușor)</option>
+        <option value="custom">Programul meu (îl construiești tu)</option>
       </select>
       <p class="hint">Programul se alege singur în funcție de obiectivul tău — poți schimba oricând din Setări.</p>
 
@@ -171,7 +172,14 @@
         </div>
         <div class="card">
           <h2>Planul săptămânal</h2>
+          <button id="btn-custom-edit" class="secondary hidden" type="button">✏️ Editează programul meu</button>
           <div id="training-plan"></div>
+        </div>
+        <div id="custom-editor" class="card hidden">
+          <h2>✏️ Programul meu — editor</h2>
+          <div id="custom-days"></div>
+          <button id="btn-custom-add-day" class="primary" type="button" style="margin-top:10px;">➕ Adaugă o zi</button>
+          <button id="btn-custom-done" class="secondary" type="button">✅ Gata, am terminat</button>
         </div>
       </section>
 
