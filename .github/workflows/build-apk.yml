@@ -32,6 +32,38 @@ jobs:
       - name: Sync web assets
         run: npx cap sync android
 
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-8-2-1-v1
+
+      - name: Pre-download Gradle (cu reincercari)
+        run: |
+          URL="https://services.gradle.org/distributions/gradle-8.2.1-all.zip"
+          HASH=$(python3 -c "
+import hashlib
+h = hashlib.md5('$URL'.encode()).digest()
+n = int.from_bytes(h, 'big')
+chars = '0123456789abcdefghijklmnopqrstuvwxyz'
+out = ''
+while n > 0:
+    n, r = divmod(n, 36)
+    out = chars[r] + out
+print(out)")
+          DIR="$HOME/.gradle/wrapper/dists/gradle-8.2.1-all/$HASH"
+          if [ -f "$DIR/gradle-8.2.1-all.zip.ok" ]; then
+            echo "Gradle deja prezent din cache."
+            exit 0
+          fi
+          mkdir -p "$DIR"
+          for i in 1 2 3 4 5; do
+            echo "Descarc Gradle (incercarea $i)..."
+            curl -sL --connect-timeout 30 --max-time 600 -o "$DIR/gradle-8.2.1-all.zip" "$URL" && break
+            sleep 10
+          done
+          touch "$DIR/gradle-8.2.1-all.zip.ok"
+
       - name: Build APK
         run: cd android && ./gradlew assembleDebug --no-daemon
 
