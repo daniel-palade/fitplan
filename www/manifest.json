@@ -1,13 +1,13 @@
 {
-  "name": "FitPlan",
-  "short_name": "FitPlan",
-  "description": "Fitness, nutriție și antrenament cu AI",
+  "name": "ZOZO GYM",
+  "short_name": "ZOZO GYM",
+  "description": "Fitness, nutriție și antrenament — ZOZO GYM",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#05060a",
-  "theme_color": "#05060a",
+  "background_color": "#eef2f9",
+  "theme_color": "#eef2f9",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }

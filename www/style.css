@@ -152,6 +152,21 @@ button.danger { background: rgba(225, 29, 72, 0.08); color: var(--red); border: 
   font-size: 15px;
 }
 .meal-list li:last-child { border-bottom: none; }
+.meal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.meal-info { flex: 1; }
+.meal-actions { display: flex; gap: 6px; }
+.meal-actions button {
+  padding: 6px 10px;
+  font-size: 14px;
+  margin: 0;
+  box-shadow: none;
+  background: var(--card2);
+}
 .meal-name { font-weight: 700; }
 .meal-meta { color: var(--muted); font-size: 13px; margin-top: 3px; }
 

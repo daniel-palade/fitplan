@@ -793,9 +793,18 @@ function renderMeals() {
   const { today } = getLog();
   const list = document.getElementById('meal-list');
   if (!today.meals.length) { list.innerHTML = '<li class="meal-meta">Nicio masă înregistrată azi.</li>'; return; }
-  list.innerHTML = today.meals.map(m => {
+  list.innerHTML = today.meals.map((m, i) => {
     const meta = `${m.calories} kcal · P ${m.protein}g · C ${m.carbs}g · G ${m.fat}g`;
-    return `<li><div class="meal-name">${esc(m.name)}</div><div class="meal-meta">${meta}</div></li>`;
+    return `<li class="meal-row">
+      <div class="meal-info">
+        <div class="meal-name">${esc(m.name)}</div>
+        <div class="meal-meta">${meta}</div>
+      </div>
+      <div class="meal-actions">
+        <button class="meal-edit" data-i="${i}" title="Editează">✏️</button>
+        <button class="meal-del" data-i="${i}" title="Șterge">🗑️</button>
+      </div>
+    </li>`;
   }).join('');
 }
 
@@ -876,7 +885,7 @@ function exerciseHTML(slot) {
   const del = info.deload ? ' · <span class="dl">descărcare: -10% kg</span>' : '';
   return `<div class="exercise-item">
     <div class="ex-row">
-      <button class="ex-yt" data-key="${esc(key)}" title="Vezi pe YouTube cum se execută">▶️</button>
+      <button class="ex-yt" data-key="${esc(key)}" title="Vezi pe YouTube Shorts cum se execută">▶️</button>
       <div class="ex-main" data-key="${esc(key)}" title="Apasă ca să adaugi kg și reps">
         <div class="ex-name">${esc(label)}</div>
         <div class="ex-detail">${esc(slot.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}${del}</div>
@@ -912,7 +921,7 @@ function renderTraining() {
     return h;
   }).join('');
   html += '<div class="note">➜ Marțea: fotbal / odihnă activă. Duminica: cardio opțional.</div>';
-  html += '<div class="note">▶️ = filmare pe YouTube cu exercițiul · ➕ (sau click pe exercițiu) = adaugă kg × reps · ✏️ = redenumește aparatul din sala ta.</div>';
+  html += '<div class="note">▶️ = filmare YouTube Shorts · ➕ (sau click pe exercițiu) = adaugă kg × reps · ✏️ = redenumește aparatul din sala ta.</div>';
   html += '<div class="note">🔄 La fiecare 4 săptămâni exercițiile se schimbă automat (varianta A ↔ B).</div>';
 
   html += '<h3 class="section-h">🧘 Stretching (după antrenament)</h3>';
@@ -956,7 +965,13 @@ function renderProfile() {
 }
 
 // ===== Gemini (incearca mai multe modele automat) =====
-const AI_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
+const AI_MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash'];
+
+function fetchTO(url, opts, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms || 40000);
+  return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(() => clearTimeout(t));
+}
 
 function analyzeMeal(base64) {
   const p = getProfile();
@@ -985,15 +1000,20 @@ Răspunde DOAR cu un obiect JSON cu exact aceste chei:
 
   const tryModel = (i) => {
     if (i >= AI_MODELS.length) {
-      return Promise.reject(new Error('Toate modelele AI sunt ocupate acum. Încearcă peste câteva minute.'));
+      return Promise.reject(new Error('Serverul e ocupat — mai încearcă o dată'));
     }
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS[i]}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
-    return fetch(url, {
+    return fetchTO(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     }).then(r => r.json()).then(data => {
       if (data.error) {
+        if (data.error.code === 400 || data.error.code === 403) {
+          const e = new Error(data.error.message || 'Eroare');
+          e.noRetry = true;
+          throw e;
+        }
         if ([404, 429, 500, 503].includes(data.error.code)) return tryModel(i + 1);
-        throw new Error(data.error.message || 'Eroare de la Gemini');
+        throw new Error(data.error.message || 'Eroare');
       }
       const txt = (data.candidates?.[0]?.content?.parts || []).map(pt => pt.text || '').join('');
       if (!txt) return tryModel(i + 1);
@@ -1002,6 +1022,9 @@ Răspunde DOAR cu un obiect JSON cu exact aceste chei:
       } catch (e) {
         return tryModel(i + 1);
       }
+    }).catch(e => {
+      if (e && e.noRetry) throw e;
+      return tryModel(i + 1);
     });
   };
   return tryModel(0);
@@ -1020,7 +1043,7 @@ function resizeImage(file, maxDim, cb) {
     cnv.width = w; cnv.height = h;
     cnv.getContext('2d').drawImage(img, 0, 0, w, h);
     URL.revokeObjectURL(url);
-    cb(cnv.toDataURL('image/jpeg', 0.82).split(',')[1]);
+    cb(cnv.toDataURL('image/jpeg', 0.75).split(',')[1]);
   };
   img.onerror = () => { URL.revokeObjectURL(url); cb(null); };
   img.src = url;
@@ -1057,8 +1080,8 @@ document.getElementById('file-input').addEventListener('change', (ev) => {
   const file = ev.target.files[0];
   if (!file) return;
   const status = document.getElementById('photo-status');
-  status.textContent = '📡 Analizez cu Gemini...';
-  resizeImage(file, 1024, (base64) => {
+  status.innerHTML = '<span class="typing"><span></span><span></span><span></span></span> Analizez poza...';
+  resizeImage(file, 800, (base64) => {
     if (!base64) { status.textContent = 'Eroare la încărcarea imaginii.'; return; }
     analyzeMeal(base64).then(res => {
       const { all, today } = getLog();
@@ -1114,7 +1137,7 @@ function mealTextSend() {
   const text = inp.value.trim();
   if (!text) { toast('Scrie ce ai mâncat'); return; }
   const status = document.getElementById('meal-text-status');
-  status.innerHTML = '<span class="typing"><span></span><span></span><span></span></span> AI calculează caloriile...';
+  status.innerHTML = '<span class="typing"><span></span><span></span><span></span></span> Calculez caloriile...';
   analyzeTextMeal(text).then(res => {
     const { all, today } = getLog();
     today.meals.push({
@@ -1228,10 +1251,46 @@ document.addEventListener('click', (ev) => {
     openRoomChat();
     return;
   }
+  const mealDel = ev.target.closest('.meal-del');
+  if (mealDel) {
+    const i = parseInt(mealDel.dataset.i);
+    const { all, today } = getLog();
+    if (today.meals[i] && confirm('Ștergi „' + today.meals[i].name + '"?')) {
+      today.meals.splice(i, 1);
+      saveLog(all);
+      renderMeals(); renderToday();
+      toast('Șters!');
+    }
+    return;
+  }
+  const mealEdit = ev.target.closest('.meal-edit');
+  if (mealEdit) {
+    const i = parseInt(mealEdit.dataset.i);
+    const { all, today } = getLog();
+    const m = today.meals[i];
+    if (!m) return;
+    const v = prompt('Editează: nume | kcal | proteine | carbo | grăsimi', `${m.name} | ${m.calories} | ${m.protein} | ${m.carbs} | ${m.fat}`);
+    if (v !== null) {
+      const parts = v.split('|').map(x => x.trim());
+      if (parts.length >= 5 && parts[0]) {
+        m.name = parts[0];
+        m.calories = parseFloat(parts[1]) || 0;
+        m.protein = parseFloat(parts[2]) || 0;
+        m.carbs = parseFloat(parts[3]) || 0;
+        m.fat = parseFloat(parts[4]) || 0;
+        saveLog(all);
+        renderMeals(); renderToday();
+        toast('Actualizat!');
+      } else {
+        toast('Format: nume | kcal | proteine | carbo | grăsimi');
+      }
+    }
+    return;
+  }
   const ytBtn = ev.target.closest('.ex-yt');
   if (ytBtn) {
     const key = ytBtn.dataset.key;
-    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(displayName(key)), '_blank');
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(displayName(key)) + '&sp=EgIYAQ%3D%3D', '_blank');
     return;
   }
   const exAdd = ev.target.closest('.ex-add');
@@ -1508,18 +1567,26 @@ STIL: prietenos, direct, concret (numere, grame, serii × repetări), maxim ~150
 function geminiText(body) {
   const p = getProfile();
   const tryModel = (i) => {
-    if (i >= AI_MODELS.length) return Promise.reject(new Error('AI-ul e ocupat acum, reîncearcă în câteva minute'));
+    if (i >= AI_MODELS.length) return Promise.reject(new Error('Serverul e ocupat — reîncearcă în câteva minute'));
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS[i]}:generateContent?key=${encodeURIComponent(p.apiKey)}`;
-    return fetch(url, {
+    return fetchTO(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     }).then(r => r.json()).then(data => {
       if (data.error) {
+        if (data.error.code === 400 || data.error.code === 403) {
+          const e = new Error(data.error.message || 'Eroare');
+          e.noRetry = true;
+          throw e;
+        }
         if ([404, 429, 500, 503].includes(data.error.code)) return tryModel(i + 1);
-        throw new Error(data.error.message || 'Eroare AI');
+        throw new Error(data.error.message || 'Eroare');
       }
       const txt = (data.candidates?.[0]?.content?.parts || []).map(pt => pt.text || '').join('');
       if (!txt) return tryModel(i + 1);
       return txt;
+    }).catch(e => {
+      if (e && e.noRetry) throw e;
+      return tryModel(i + 1);
     });
   };
   return tryModel(0);
@@ -1539,7 +1606,7 @@ function renderAIChat() {
   const hist = store.get(AI_HIST[chatMode], []);
   const aiName = 'ZOZO';
   if (!hist.length) {
-    el.innerHTML = '<div class="meal-meta">Salut, eu sunt ZOZO ⭐ — antrenorul tău AI. Cunosc obiectivul tău, datele tale, planul de antrenament și calendarul de posturi. Întreabă-mă orice despre fitness, nutriție sau planul tău!</div>';
+    el.innerHTML = '<div class="meal-meta">Salut, eu sunt ZOZO ⭐ — antrenorul tău. Cunosc obiectivul tău, datele tale, planul de antrenament și calendarul de posturi. Întreabă-mă orice despre fitness, nutriție sau planul tău!</div>';
     return;
   }
   let html = hist.slice(-60).map(m => chatBubble(m, m.role === 'user', aiName)).join('');
@@ -1581,7 +1648,7 @@ function openAIChat(mode) {
   chatMode = mode;
   document.getElementById('chat-lobby').classList.add('hidden');
   document.getElementById('chat-room').classList.remove('hidden');
-  document.getElementById('chat-room-title').textContent = '⭐ ZOZO — antrenorul tău AI';
+  document.getElementById('chat-room-title').textContent = '⭐ ZOZO — antrenorul tău';
   document.getElementById('chat-code-label').textContent = 'Personalizat pe obiectivul, datele tale și calendarul tău';
   renderAIChat();
 }
