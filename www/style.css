@@ -569,3 +569,57 @@ body.theme-f {
 body.theme-f .chat-menu-item,
 body.theme-f .ex-log { border-color: rgba(219, 39, 119, 0.28); }
 body.theme-f .cal-g.load { background: rgba(219, 39, 119, 0.12); color: var(--accent); }
+
+/* ===== Tabel exercitii ===== */
+.ex-table-head {
+  display: grid;
+  grid-template-columns: 44px 1fr 48px 38px;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+  padding: 8px 0 6px;
+  border-bottom: 2.5px solid var(--card2);
+}
+.ex-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 48px 38px;
+  gap: 5px;
+  align-items: center;
+  padding: 8px 0;
+}
+.ex-yt, .ex-add, .ex-rename {
+  background: var(--card2);
+  border-radius: 10px;
+  padding: 9px 0;
+  font-size: 14px;
+  margin: 0;
+  box-shadow: none;
+  text-align: center;
+}
+.ex-yt { font-size: 12px; }
+.ex-add { background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; }
+.ex-rename { font-size: 13px; }
+.ex-main { cursor: pointer; }
+
+/* ===== Incalzire ===== */
+.warmup {
+  background: rgba(217, 119, 6, 0.07);
+  border: 1.5px solid rgba(217, 119, 6, 0.4);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+}
+.warmup-title {
+  font-weight: 800;
+  color: var(--gold);
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.warmup-item {
+  font-size: 14px;
+  color: var(--text);
+  padding: 3px 0;
+  line-height: 1.55;
+}
+.warmup-item::before { content: "• "; color: var(--gold); font-weight: 800; }

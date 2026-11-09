@@ -759,6 +759,8 @@ function renderToday() {
 
   if (TRAIN[dow]) {
     let html = '<div class="day-title">' + TRAIN[dow].title + '</div>' + status;
+    html += warmupHTML(TRAIN[dow]);
+    html += EX_TABLE_HEAD;
     TRAIN[dow].exercises.forEach(slot => { html += exerciseHTML(slot); });
     html += `<div class="note">${TRAIN[dow].note}</div>`;
     tw.innerHTML = html;
@@ -797,7 +799,70 @@ function renderMeals() {
   }).join('');
 }
 
-// Un exercitiu = nume (redenumibil) + serie/reps + sfat + casuta kg/reps + istoric
+// ===== Incalzire speciala pentru fiecare zi de sala =====
+const WARMUP_BY_CAT = {
+  chest: ["Fluturări fără greutate × 15", "Împins cu bară goală × 12"],
+  back: ["Ridicări de umeri (shrugs) ușoare × 12", "Tracțiuni ușoare × 5-8 sau aparat ușor × 12"],
+  shoulders: ["Cercuri de brațe × 15 în fiecare direcție", "Fluturări laterale foarte ușoare × 12"],
+  triceps: ["Împins triceps foarte ușor × 15"],
+  biceps: ["Curl foarte ușor × 15"],
+  rear: ["Fluturări spate foarte ușoare × 15"],
+  quads: ["Genuflexiuni fără greutate × 15", "Fandări în loc × 10 fiecare picior"],
+  hams: ["Îndreptări cu bară goală × 12"],
+  glutes: ["Glute bridge × 15", "Abducții cu bandă × 15"],
+  calves: ["Ridicări pe gambe fără greutate × 15"],
+  core: ["Plank ușor 20 sec"]
+};
+
+function catOfExercise(name) {
+  for (const cat of Object.keys(POOL)) {
+    if (POOL[cat].some(it => it.a === name || it.b === name)) return cat;
+  }
+  return null;
+}
+
+function warmupForDay(dayData) {
+  const items = ["3-5 min bicicletă / vâslire ușoară (pulsul urcă puțin, nu te obosi)"];
+  const cats = [];
+  (dayData.exercises || []).forEach(slot => {
+    const c = catOfExercise(activeSlotName(slot));
+    if (c && !cats.includes(c)) cats.push(c);
+  });
+  cats.slice(0, 4).forEach(c => {
+    (WARMUP_BY_CAT[c] || []).forEach(w => { if (!items.includes(w)) items.push(w); });
+  });
+  const first = dayData.exercises && dayData.exercises[0];
+  if (first) {
+    items.push(`${displayName(activeSlotName(first))}: 1-2 serii ușoare cu 40-50% din kg normal (× 10-12)`);
+    const second = dayData.exercises[1];
+    if (second) items.push(`${displayName(activeSlotName(second))}: 1 serie ușoară (× 10)`);
+  }
+  return items;
+}
+
+function warmupHTML(dayData) {
+  const items = warmupForDay(dayData);
+  return `<div class="warmup">
+    <div class="warmup-title">🔥 Încălzire (înainte de antrenament)</div>
+    ${items.map(i => `<div class="warmup-item">${i}</div>`).join('')}
+  </div>`;
+}
+
+const EX_TABLE_HEAD = `<div class="ex-table-head"><span class="th-yt">▶️</span><span>Exercițiu · Serii</span><span class="th-add">➕</span><span class="th-ren">✏️</span></div>`;
+
+function toggleExLog(key) {
+  const logs = document.querySelectorAll(`.ex-log[data-key="${CSS.escape(key)}"]`);
+  if (!logs.length) return;
+  logs.forEach(l => {
+    l.classList.toggle('hidden');
+    if (!l.classList.contains('hidden')) {
+      const inp = l.querySelector('.log-weight');
+      if (inp && l.closest('.tab.active')) inp.focus();
+    }
+  });
+}
+
+// Un exercitiu = tabel: ▶️ YouTube + nume + ➕ adauga kg/reps + ✏️ redenumire
 function exerciseHTML(slot) {
   const key = activeSlotName(slot);
   const label = displayName(key);
@@ -808,12 +873,19 @@ function exerciseHTML(slot) {
   ).join('');
   const tips = TIPS[key] ? `<div class="ex-tips">💡 ${TIPS[key]}</div>` : '';
   const info = weekInfo();
-  const del = info.deload ? ' · <span class="dl">descărcare: mai puține serii, -10% kg</span>' : '';
+  const del = info.deload ? ' · <span class="dl">descărcare: -10% kg</span>' : '';
   return `<div class="exercise-item">
-    <div class="ex-head"><div class="ex-name">${esc(label)}</div><button class="ex-rename" data-key="${esc(key)}" title="Redenumește">✏️</button></div>
-    <div class="ex-detail">${esc(slot.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}${del}</div>
+    <div class="ex-row">
+      <button class="ex-yt" data-key="${esc(key)}" title="Vezi pe YouTube cum se execută">▶️</button>
+      <div class="ex-main" data-key="${esc(key)}" title="Apasă ca să adaugi kg și reps">
+        <div class="ex-name">${esc(label)}</div>
+        <div class="ex-detail">${esc(slot.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}${del}</div>
+      </div>
+      <button class="ex-add" data-key="${esc(key)}" title="Adaugă kg și repetări">➕</button>
+      <button class="ex-rename" data-key="${esc(key)}" title="Redenumește exercițiul">✏️</button>
+    </div>
     ${tips}
-    <div class="ex-log" data-key="${esc(key)}">
+    <div class="ex-log hidden" data-key="${esc(key)}">
       <div class="inline-form log-form">
         <input type="number" class="log-weight" inputmode="decimal" placeholder="kg" />
         <input type="number" class="log-reps" inputmode="numeric" placeholder="reps" />
@@ -833,12 +905,14 @@ function renderTraining() {
   html += Object.keys(TRAIN).map(k => {
     const d = TRAIN[k];
     let h = `<div class="day-block"><div class="day-title">${d.title}</div>`;
+    h += warmupHTML(d);
+    h += EX_TABLE_HEAD;
     d.exercises.forEach(slot => { h += exerciseHTML(slot); });
     h += `<div class="note">${d.note}</div></div>`;
     return h;
   }).join('');
   html += '<div class="note">➜ Marțea: fotbal / odihnă activă. Duminica: cardio opțional.</div>';
-  html += '<div class="note">✏️ Dacă sala ta nu are aparatul, apasă creionul lângă exercițiu și redenumește-l.</div>';
+  html += '<div class="note">▶️ = filmare pe YouTube cu exercițiul · ➕ (sau click pe exercițiu) = adaugă kg × reps · ✏️ = redenumește aparatul din sala ta.</div>';
   html += '<div class="note">🔄 La fiecare 4 săptămâni exercițiile se schimbă automat (varianta A ↔ B).</div>';
 
   html += '<h3 class="section-h">🧘 Stretching (după antrenament)</h3>';
@@ -1097,6 +1171,16 @@ document.addEventListener('click', (ev) => {
     openRoomChat();
     return;
   }
+  const ytBtn = ev.target.closest('.ex-yt');
+  if (ytBtn) {
+    const key = ytBtn.dataset.key;
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(displayName(key)), '_blank');
+    return;
+  }
+  const exAdd = ev.target.closest('.ex-add');
+  if (exAdd) { toggleExLog(exAdd.dataset.key); return; }
+  const exMain = ev.target.closest('.ex-main');
+  if (exMain) { toggleExLog(exMain.dataset.key); return; }
   const addBtn = ev.target.closest('.log-add');
   if (addBtn) {
     const log = addBtn.closest('.ex-log');
@@ -1106,6 +1190,7 @@ document.addEventListener('click', (ev) => {
     if (!w || w <= 0 || !r || r <= 0) { toast('Completează kg și reps'); return; }
     addSet(key, w, r);
     renderTraining(); renderToday();
+    toggleExLog(key);
     toast(`${displayName(key)}: ${w}kg × ${r} salvat!`);
   }
 });
