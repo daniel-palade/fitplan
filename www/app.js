@@ -695,11 +695,54 @@ function monthGridHTML(y, m) {
     const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const fi = fastInfo(ds);
     const isToday = ds === todayKey();
-    cells += `<div class="cal-g ${fi.black ? 'black' : (fi.active ? 'fast' : '')} ${isToday ? 'today' : ''}">${d}</div>`;
+    cells += `<div class="cal-g ${fi.black ? 'black' : (fi.active ? 'fast' : '')} ${isToday ? 'today' : ''}" data-ds="${ds}">${d}</div>`;
   }
   cells += '</div>';
   const title = MONTHS_RO[m].charAt(0).toUpperCase() + MONTHS_RO[m].slice(1) + ' ' + y;
   return `<div class="month-block"><div class="month-title">🗓️ ${title}</div>${cells}</div>`;
+}
+
+// Detalii pentru ziua selectata din calendar
+function dayDetailHTML(ds) {
+  const p = getProfile();
+  const fi = fastInfo(ds);
+  const dow = DOW[new Date(ds).getDay()];
+  const TRAIN = getTraining();
+  const dnum = new Date(ds);
+  const mn = MONTHS_RO[dnum.getMonth()];
+  const mname = mn.charAt(0).toUpperCase() + mn.slice(1);
+  let html = `<div class="month-title" style="margin-bottom:6px;">📅 ${dnum.getDate()} ${mname} ${dnum.getFullYear()} — ${dow}</div>`;
+  if (fi.black) {
+    html += '<div class="note">🚫 <b>POST NEGRU</b> — fără mâncare sau foarte puțin după amiază. La sală: fără efort mare, doar mobilitate sau plimbare.</div>';
+  } else if (fi.name) {
+    html += `<div class="note">🌿 <b>${fi.name}</b> — fără carne, lapte, ouă, pește. Proteine din: soia texturată, tofu, linte, năut, fasole. Vezi „Planul meu de post".</div>`;
+  } else if (fi.wedfri) {
+    html += '<div class="note">🌿 Zi de post (miercuri/vineri) — fără carne, lapte, ouă, pește.</div>';
+  } else {
+    html += '<div class="note">✅ Nu e post — mănânci normal după planul tău.</div>';
+  }
+  if (TRAIN[dow]) {
+    html += `<div class="note">🏋️ <b>${TRAIN[dow].title}</b> — exercițiile și încălzirea în tab-ul Sală.</div>`;
+  } else if (dow === 'Marți') {
+    html += '<div class="note">🏃 Fotbal 1h30 — zi de sport, fără sală.</div>';
+  } else if (dow === 'Duminică') {
+    html += '<div class="note">🚶 Odihnă sau cardio ușor (30-45 min).</div>';
+  }
+  if (p && p.programStart) {
+    const wk = Math.floor(daysBetween(p.programStart, ds) / 7);
+    const wIn = ((wk % 4) + 4) % 4;
+    html += (wIn === 3)
+      ? '<div class="note">🟡 Săptămână de <b>DESCĂRCARE</b> — volum -40%, greutăți -10%.</div>'
+      : `<div class="note">🔵 Săptămână de <b>ÎNCĂRCARE</b> ${wIn + 1}/4 — progresiv, adaugă kg la exercițiile principale.</div>`;
+  }
+  if (p && p.sex === 'f' && p.cycle && p.cycle.last) {
+    const len = p.cycle.len || 28;
+    const d = daysBetween(p.cycle.last, ds);
+    const dayOf = ((d % len) + len) % len;
+    if (dayOf < 5) html += '<div class="note">🌸 Posibilă menstruație — antrenamente ușoare-moderate, fără efort maxim.</div>';
+    else if (dayOf >= len - 3 && dayOf < len) html += '<div class="note">🌸 Ciclul se apropie — păstrează energie, nu forța recorduri.</div>';
+  }
+  return html;
 }
 
 function renderFastCalendar() {
@@ -721,13 +764,11 @@ function renderToday() {
   const p = getProfile();
   const t = computeTargets(p);
   const tot = todayTotals();
-  const rem = t.target - tot.c;
-  // salut personalizat + zile consecutive
+  const rem = Math.round(t.target - tot.c);
+  // zile consecutive
   const stk = store.get('streak', { last: null, count: 0 });
-  const hr = new Date().getHours();
-  const hello = hr < 12 ? 'Bună dimineața' : (hr < 18 ? 'Bună ziua' : 'Bună seara');
   document.getElementById('greet-line').innerHTML =
-    `${hello}, ${esc(p.name || 'campion')}! 👋 <span class="streak">🔥 ${stk.count} ${stk.count === 1 ? 'zi' : 'zile'} la rând</span>`;
+    `<span class="streak">🔥 ${stk.count} ${stk.count === 1 ? 'zi' : 'zile'} la rând</span>`;
   document.getElementById('remaining-total').textContent =
     (rem >= 0 ? rem + ' kcal rămase' : (Math.abs(rem) + ' kcal peste'));
   const line = (cur, target, unit) => `${round1(cur)} / ${round1(target)}${unit}`;
@@ -1203,6 +1244,13 @@ document.getElementById('btn-fast-plan').addEventListener('click', () => {
   document.getElementById('fast-plan').classList.toggle('hidden');
 });
 
+document.getElementById('btn-cal-size').addEventListener('click', () => {
+  const cal = document.getElementById('fast-cal');
+  cal.classList.toggle('compact');
+  document.getElementById('btn-cal-size').textContent =
+    cal.classList.contains('compact') ? '🔍 Marește calendarul' : '🔍 Micșorează calendarul';
+});
+
 document.getElementById('btn-key-help').addEventListener('click', () => {
   document.getElementById('key-help').classList.toggle('hidden');
 });
@@ -1249,6 +1297,22 @@ document.addEventListener('click', (ev) => {
     c.active = chatRow.dataset.code;
     setChat(c);
     openRoomChat();
+    return;
+  }
+  const calDay = ev.target.closest('.cal-g[data-ds]');
+  if (calDay) {
+    const ds = calDay.dataset.ds;
+    const el = document.getElementById('day-detail');
+    if (el) {
+      el.innerHTML = dayDetailHTML(ds) + '<button class="cal-toggle" type="button" id="btn-day-close">✖ Închide</button>';
+      el.classList.remove('hidden');
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return;
+  }
+  if (ev.target.closest('#btn-day-close')) {
+    const el = document.getElementById('day-detail');
+    if (el) el.classList.add('hidden');
     return;
   }
   const mealDel = ev.target.closest('.meal-del');

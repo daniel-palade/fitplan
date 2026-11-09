@@ -585,6 +585,33 @@ body.theme-f .chat-menu-item,
 body.theme-f .ex-log { border-color: rgba(219, 39, 119, 0.28); }
 body.theme-f .cal-g.load { background: rgba(219, 39, 119, 0.12); color: var(--accent); }
 
+/* ===== Calendar compact + detalii ===== */
+.cal-toggle {
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 8px;
+  font-size: 13px;
+  background: var(--card2);
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  color: var(--accent);
+  border-radius: 10px;
+}
+#day-detail {
+  background: rgba(2, 132, 199, 0.06);
+  border: 1.5px solid rgba(2, 132, 199, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+#fast-cal .cal-g { cursor: pointer; }
+#fast-cal.compact .cal-g { padding: 5px 0; font-size: 11px; border-radius: 6px; }
+#fast-cal.compact .cal-g.today { outline-width: 2px; }
+#fast-cal.compact .cal-dow span { font-size: 10px; }
+#fast-cal.compact .month-block { margin-bottom: 10px; }
+#fast-cal.compact .month-title { font-size: 13px; margin-bottom: 4px; }
+#train-cal .cal-g.week { padding: 7px 0; font-size: 12.5px; border-radius: 8px; }
+#train-cal .month-title { font-size: 13px; margin-bottom: 4px; }
+
 /* ===== Tabel exercitii ===== */
 .ex-table-head {
   display: grid;
