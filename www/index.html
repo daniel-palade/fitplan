@@ -144,6 +144,16 @@
         <div id="photo-status" class="status"></div>
 
         <div class="card">
+          <h2>⌨️ Sau scrie ce ai mâncat</h2>
+          <div class="inline-form">
+            <input id="meal-text" type="text" placeholder="ex: 200g piept de pui cu orez și salată" />
+            <button id="btn-meal-text" class="primary" type="button">➤</button>
+          </div>
+          <div id="meal-text-status" class="status"></div>
+          <p class="hint">Scrie în cuvinte simple ce ai mâncat — AI-ul calculează singur caloriile și proteinele.</p>
+        </div>
+
+        <div class="card">
           <h2>Mesele de azi</h2>
           <ul id="meal-list" class="meal-list"></ul>
         </div>
@@ -181,13 +191,9 @@
         <div class="card">
           <h2>💬 Cu cine vrei să vorbești?</h2>
           <div class="chat-menu">
-            <button class="chat-menu-item" id="btn-ai-coach" type="button">
-              <span class="cm-emoji">💪</span>
-              <span class="cm-txt"><span class="cm-title">Antrenorul meu AI</span><span class="cm-sub">Personalizat pe obiectivul și datele tale</span></span>
-            </button>
             <button class="chat-menu-item" id="btn-ai-zozo" type="button">
               <span class="cm-emoji">⭐</span>
-              <span class="cm-txt"><span class="cm-title">ZOZO</span><span class="cm-sub">Expert în fitness, sport și nutriție</span></span>
+              <span class="cm-txt"><span class="cm-title">ZOZO — antrenorul tău AI</span><span class="cm-sub">Personalizat pe obiectivul și datele tale + expert în fitness și nutriție</span></span>
             </button>
             <button class="chat-menu-item" id="btn-ai-room" type="button">
               <span class="cm-emoji">🗣️</span>

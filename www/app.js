@@ -1078,6 +1078,63 @@ document.getElementById('file-input').addEventListener('change', (ev) => {
   ev.target.value = '';
 });
 
+// ===== Chat de mancare: scrii ce ai mancat, AI-ul calculeaza =====
+function analyzeTextMeal(text) {
+  const p = getProfile();
+  const fi = fastInfo(todayKey());
+  const fastLine = fi.active ? ' Context: persoana ține post ortodox azi (fără carne, lapte, ouă, pește).' : '';
+  const prompt = `Ești nutriționist. Descrierea mesei: "${text}"
+Estimează caloriile și macro-urile (proteine, carbohidrați, grăsimi) pentru toată porția descrisă.${fastLine}
+Răspunde DOAR cu un obiect JSON cu exact aceste chei:
+{
+  "name": "numele scurt al mesei",
+  "calories": numar,
+  "protein": numar,
+  "carbs": numar,
+  "fat": numar,
+  "portion": "descrierea porției estimate",
+  "confidence": "high|medium|low",
+  "notes": "1-2 propoziții despre calitatea alimentului"
+}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { responseMimeType: 'application/json' }
+  };
+  return geminiText(body).then(txt => {
+    try {
+      return JSON.parse(txt.replace(/```json|```/g, '').trim());
+    } catch (e) {
+      throw new Error('Nu am putut calcula — reformulează mâncarea');
+    }
+  });
+}
+
+function mealTextSend() {
+  const inp = document.getElementById('meal-text');
+  const text = inp.value.trim();
+  if (!text) { toast('Scrie ce ai mâncat'); return; }
+  const status = document.getElementById('meal-text-status');
+  status.innerHTML = '<span class="typing"><span></span><span></span><span></span></span> AI calculează caloriile...';
+  analyzeTextMeal(text).then(res => {
+    const { all, today } = getLog();
+    today.meals.push({
+      name: res.name || text.slice(0, 30), calories: res.calories || 0,
+      protein: res.protein || 0, carbs: res.carbs || 0, fat: res.fat || 0,
+      portion: res.portion || '', confidence: res.confidence || 'medium', notes: res.notes || ''
+    });
+    saveLog(all);
+    renderToday(); renderMeals();
+    status.textContent = `✅ ${res.name}: ${res.calories} kcal · P ${res.protein}g · C ${res.carbs}g · G ${res.fat}g`;
+    inp.value = '';
+    toast((res.name || 'Mâncare') + ' adăugată!');
+  }).catch(err => {
+    status.textContent = '❌ ' + err.message;
+  });
+}
+
+document.getElementById('btn-meal-text').addEventListener('click', mealTextSend);
+document.getElementById('meal-text').addEventListener('keydown', (e) => { if (e.key === 'Enter') mealTextSend(); });
+
 document.getElementById('btn-weight').addEventListener('click', () => {
   const v = parseFloat(document.getElementById('weight-input').value);
   if (!v || v <= 0) { toast('Introdu o greutate validă'); return; }
@@ -1308,7 +1365,7 @@ function chatRefresh() {
 
 let chatMode = null; // 'room' | 'coach' | 'zozo'
 let aiTyping = false;
-const AI_HIST = { coach: 'aiCoachHist', zozo: 'zozoHist' };
+const AI_HIST = { zozo: 'zozoHist' };
 
 function showChatLobby() {
   chatMode = null;
@@ -1409,11 +1466,44 @@ PRINCIPIILE TALE CA ANTRENOR:
 ${style}`;
 }
 
-const ZOZO_SCRIPT = `Ești ZOZO — expert în fitness, sport, nutriție, suplimente și recuperare. Numele tău e ZOZO pentru toată lumea.
-SUBIECTE PERMISE (doar astea): fitness, antrenamente, sala, exerciții, nutriție, suplimente, sport, recuperare, motivație, stiri și articole din fitness.
-Dacă userul iese de la subiect, refuză politicos, cu umor dacă se potrivește, și adu conversația înapoi la fitness.
+function zozoScript() {
+  const p = getProfile();
+  const t = computeTargets(p);
+  const TRAIN = getTraining();
+  const dow = DOW[new Date().getDay()];
+  const todayW = TRAIN[dow] ? TRAIN[dow].title : 'odihnă sau cardio ușor';
+  const info = weekInfo();
+  const weekTxt = info.deload ? 'săptămână de DESCĂRCARE (volum redus)' : `săptămâna ${info.weekInMeso + 1} de ÎNCĂRCARE`;
+  const fi = fastInfo(todayKey());
+  const fastNote = fi.active ? 'IMPORTANT: azi ține post ortodox (fără carne, lapte, ouă) — sfaturile alimentare trebuie să respecte postul. ' : '';
+  const pi = periodInfo();
+  const periodNote = (pi && pi.inPeriod) ? 'IMPORTANT: e în perioada menstruală — recomandă antrenamente mai ușoare, fier și hidratare. ' : '';
+  const sexNote = p.sex === 'f'
+    ? 'E femeie: accent pe fesieri/picioare în antrenamente, fii atentă la energie, fier și calciu. '
+    : 'E bărbat: forță și masă în focus, joacă fotbal marțea (zi de sport, fără sală). ';
+  const goalBlock = p.goal === 'cut'
+    ? `PRINCIPII PENTRU OBIECTIVUL EI/LUI (SLĂBIRE + DEFINIRE):
+1. Deficit moderat, niciodată sub 1500 kcal/zi (femei) sau 1800 kcal/zi (bărbați). Slăbire sănătoasă: 0.5-0.75 kg/săptămână.
+2. Proteinele sunt sacre: minim 30-40g la fiecare masă, cu surse concrete (grame).
+3. Forța rămâne prioritară în deficit (6-12 reps). Cardio e complement. Pași 8-10 mii, somn 7-8h.`
+    : p.goal === 'bulk'
+      ? `PRINCIPII (MASĂ MUSCULARĂ):
+1. Surpus moderat +10-15% (ținta lui: ${t.target} kcal). Creștere ideală: 0.25-0.5 kg/săptămână.
+2. SUPRAÎNCĂRCARE PROGRESIVĂ = regula de aur: +1-2 kg când face toate repetările.
+3. Compusele prioritare (împins, tracțiuni, genuflexiuni, îndreptări), 10-20 serii/muschi/săptămână, somn 7-9h.`
+      : `PRINCIPII (MENȚINERE):
+1. Echilibru 80/20 — 80% mâncare curată, 20% flexibilitate.
+2. Forță 3-4x/săptămână + cardio 150 min/săptămână (recomandarea OMS).
+3. Obiceiuri sustenabile: pași zilnici, somn constant, proteine la fiecare masă.`;
+  return `Ești ZOZO — antrenorul personal AI și expert în fitness, sport, nutriție, suplimente și recuperare. Numele tău e ZOZO pentru toată lumea.
+Îl/O ajuta pe: ${p.name || 'elevul meu'}, ${p.age} ani, ${p.height} cm, ${p.weight} kg.
+DATELE SALE (folosește-le în răspunsuri): ținta zilnică ${t.target} kcal · proteine ${t.protein}g · carbo ${t.carbs}g · grăsimi ${t.fat}g. Antrenament 5 zile/săptămână. Azi are: ${todayW}. Suntem în ${weekTxt}.
+${sexNote}${periodNote}${fastNote}
+${goalBlock}
+SUBIECTE PERMISE (doar astea): fitness, antrenamente, sala, exerciții, nutriție, suplimente, sport, recuperare, motivație, stiri și articole din fitness. Dacă userul iese de la subiect, refuză politicos, cu umor dacă se potrivește, și adu conversația înapoi la fitness.
 Dacă întreabă de stiri foarte recente, spune clar că nu ai date în timp real și recomandă surse de specialitate.
-STIL: prietenos, clar, la obiect, maxim ~150 cuvinte, text simplu fără markdown. Te adresezi cu „tu".`;
+STIL: prietenos, direct, concret (numere, grame, serii × repetări), maxim ~150 cuvinte, text simplu fără markdown. Te adresezi cu „tu".`;
+}
 
 function geminiText(body) {
   const p = getProfile();
@@ -1447,12 +1537,9 @@ function chatBubble(m, mine, aiName) {
 function renderAIChat() {
   const el = document.getElementById('chat-msgs');
   const hist = store.get(AI_HIST[chatMode], []);
-  const aiName = chatMode === 'coach' ? 'Antrenor AI' : 'ZOZO';
+  const aiName = 'ZOZO';
   if (!hist.length) {
-    const intro = chatMode === 'coach'
-      ? 'Salut! Sunt antrenorul tău AI 💪 Cunosc obiectivul tău și datele tale — întreabă-mă orice: mese, antrenamente, greutăți, motivație.'
-      : 'Salut, eu sunt ZOZO ⭐ Vorbesc doar despre fitness, sport și nutriție. Ce te interesează?';
-    el.innerHTML = `<div class="meal-meta">${intro}</div>`;
+    el.innerHTML = '<div class="meal-meta">Salut, eu sunt ZOZO ⭐ — antrenorul tău AI. Cunosc obiectivul tău, datele tale, planul de antrenament și calendarul de posturi. Întreabă-mă orice despre fitness, nutriție sau planul tău!</div>';
     return;
   }
   let html = hist.slice(-60).map(m => chatBubble(m, m.role === 'user', aiName)).join('');
@@ -1467,7 +1554,7 @@ function aiSend(text) {
   const key = AI_HIST[chatMode];
   const hist = store.get(key, []);
   hist.push({ role: 'user', text: text, ts: Date.now() });
-  const system = chatMode === 'coach' ? coachScript() : ZOZO_SCRIPT;
+  const system = zozoScript();
   const contents = hist.slice(-16).map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.text }]
@@ -1494,10 +1581,8 @@ function openAIChat(mode) {
   chatMode = mode;
   document.getElementById('chat-lobby').classList.add('hidden');
   document.getElementById('chat-room').classList.remove('hidden');
-  document.getElementById('chat-room-title').textContent = mode === 'coach' ? '💪 Antrenorul meu AI' : '⭐ ZOZO';
-  document.getElementById('chat-code-label').textContent = mode === 'coach'
-    ? 'Personalizat pe obiectivul și datele tale'
-    : 'Expert universal în fitness & nutriție';
+  document.getElementById('chat-room-title').textContent = '⭐ ZOZO — antrenorul tău AI';
+  document.getElementById('chat-code-label').textContent = 'Personalizat pe obiectivul, datele tale și calendarul tău';
   renderAIChat();
 }
 
@@ -1505,7 +1590,7 @@ function doSend() {
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
   if (!text) return;
-  if (chatMode === 'coach' || chatMode === 'zozo') {
+  if (chatMode === 'zozo') {
     inp.value = '';
     aiSend(text);
   } else if (chatMode === 'room') {
@@ -1518,7 +1603,6 @@ document.getElementById('btn-chat-show-join').addEventListener('click', () => {
   document.getElementById('chat-join-box').classList.toggle('hidden');
 });
 document.getElementById('btn-chat-join').addEventListener('click', chatJoin);
-document.getElementById('btn-ai-coach').addEventListener('click', () => openAIChat('coach'));
 document.getElementById('btn-ai-zozo').addEventListener('click', () => openAIChat('zozo'));
 document.getElementById('btn-ai-room').addEventListener('click', () => showChatLobby());
 document.getElementById('btn-chat-send').addEventListener('click', doSend);
