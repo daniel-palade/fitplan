@@ -104,7 +104,25 @@ const TIPS = {
   "Twist rusesc": "Rotește din trunchi, nu doar din brațe, picioarele fixe.",
   "Dead bug": "Spatele lipit de sol, mișcări lente și controlate, fără arcuire lombară.",
   "Bird dog": "Mâna opusă piciorului, corp drept, ține 2 sec în extensie.",
-  "Biceps + Triceps (superset)": "Un exercițiu de biceps urmat imediat de unul de triceps, pauză abia după pereche."
+  "Biceps + Triceps (superset)": "Un exercițiu de biceps urmat imediat de unul de triceps, pauză abia după pereche.",
+  "Împins la piept declinat": "Bancă cu capul în jos (declin), coboară bara spre partea de jos a pieptului, control complet.",
+  "Împins declinat cu gantere": "Capul jos, ganterele la nivelul pieptului de jos, coatele la ~45°, fără balans.",
+  "Ramat la helcometru (T-bar)": "Trunchi înclinat fix, trage cu cotele spre șold, strânge omoplații 1 sec.",
+  "Pull-over cu gantera": "Întinzi brațele înapoi peste cap, simți întinderea în dorsal, mișcare largă și lentă.",
+  "Fluturări spate la aparat": "Spatele lipit de sprijin, duci coatele înapoi și în afară, strângi 1 sec.",
+  "Pushdown cu sfoară (rope)": "Despici sfoara la finalul mișcării, coatele fixe lângă corp.",
+  "Kickback cu gantera": "Trunchi înclinat, cotul sus și fix, întinde complet înapoi, fără smucituri.",
+  "Curl înclinat pe bancă": "Brațele atârnă în spate pe banca înclinată — întinde capul lung al bicepsului, control maxim.",
+  "Curl predicăt (preacher)": "Coatele fixe pe sprijin, fără elan, coborâre lentă 3 sec.",
+  "Fandări mergând (walking lunges)": "Pași lungi înainte, trunchi drept, genunchiul stabil — finisher perfect pentru picioare.",
+  "Flexii femural culcat": "Șoldurile lipite de bancă, tragi cu călcâiele, control la întoarcere.",
+  "Flexii femural așezat": "Spate drept, tragi călcâiele sub bancă, fără smucituri.",
+  "Îndreptări cu gantere": "Ganterele lângă picioare, spate drept, coboară simțind femuralul întinzându-se.",
+  "Genuflexiuni adânci (deep squat)": "Coboară sub paralel, călcâiele pe sol — fesierii lucrează la maxim.",
+  "Ridicări pe gambe așezat": "Întindere completă jos, pauză 2 sec sus — lovește gambele laterale.",
+  "Ridicări de picioare atârnat": "Atârnat de bară, fără legănare, urci genunchii/picioarele controlat.",
+  "Abdomene la cablu": "Îngenuncheat la aparat, te rotești din abdomen, nu din brațe.",
+  "Plank cu rotație": "Din plank, deschide brațul spre tavan, alternând părțile, controlat."
 };
 
 // ===== Programe de antrenament (se rotesc la 4 saptamani: a / b) =====
@@ -233,99 +251,211 @@ const TRAINING_F = {
 // ===== Sistem de programe (splits) — personalizate pe obiectiv =====
 const POOL = {
   chest: [
-    { a: "Împins din piept cu bara", b: "Împins din piept cu gantere", d: "4 × 6-10" },
-    { a: "Împins înclinat cu gantere", b: "Împins înclinat cu bara", d: "3 × 8-12" },
-    { a: "Fluturări cu gantere", b: "Fluturări la cablu", d: "3 × 12-15" },
-    { a: "Fluturări la aparat (pec deck)", b: "Dips (piept)", d: "3 × 12-15" }
+    { a: "Împins din piept cu bara", b: "Împins din piept cu gantere", part: "mijlociu", d: "4 × 6-10" },
+    { a: "Împins înclinat cu bara", b: "Împins înclinat cu gantere", part: "superior", d: "3 × 8-12" },
+    { a: "Împins la piept declinat", b: "Împins declinat cu gantere", part: "inferior", d: "3 × 8-12" },
+    { a: "Fluturări cu gantere", b: "Fluturări la cablu", part: "finisher", d: "3 × 12-15" },
+    { a: "Fluturări la aparat (pec deck)", b: "Dips (piept)", part: "finisher", d: "3 × 12-15" }
   ],
   back: [
-    { a: "Tracțiuni la bară", b: "Tracțiuni la aparat (lat pulldown)", d: "4 × 6-12" },
-    { a: "Ramat cu bara", b: "Ramat la cablu (seated row)", d: "4 × 8-12" },
-    { a: "Ramat cu gantera (un braț)", b: "Îndreptări cu bara (deadlift)", d: "3 × 8-12" },
-    { a: "Ridicări trapez (shrugs)", d: "3 × 12-15" }
+    { a: "Tracțiuni la bară", b: "Tracțiuni la aparat (lat pulldown)", part: "lățime", d: "4 × 6-12" },
+    { a: "Ramat cu bara", b: "Ramat la cablu (seated row)", part: "grosime", d: "4 × 8-12" },
+    { a: "Ramat la helcometru (T-bar)", b: "Ramat cu gantera (un braț)", part: "grosime", d: "3 × 8-12" },
+    { a: "Pull-over cu gantera", b: "Tracțiuni la aparat (lat pulldown)", part: "finisher", d: "3 × 12-15" },
+    { a: "Ridicări trapez (shrugs)", part: "trapez", d: "3 × 12-15" },
+    { a: "Îndreptări cu bara (deadlift)", part: "compus", d: "3 × 6-8" }
   ],
   shoulders: [
-    { a: "Împins la umeri cu bara", b: "Împins la umeri cu gantere", d: "3 × 8-12" },
-    { a: "Fluturări laterale", b: "Ridicare la bărbie", d: "3 × 12-15" },
-    { a: "Împins la umeri cu gantere", b: "Fluturări la aparat lateral", d: "3 × 10-12" }
-  ],
-  triceps: [
-    { a: "Împins triceps la cablu (pushdown)", b: "Extensii cu bara EZ (skull crusher)", d: "3 × 10-15" },
-    { a: "Dips (triceps)", b: "Flotări cu priză îngustă", d: "3 × 10-12" },
-    { a: "Extensii cu gantera (peste cap)", b: "Împins triceps la cablu (pushdown)", d: "3 × 12-15" }
-  ],
-  biceps: [
-    { a: "Curl cu bara", b: "Curl cu gantere alternativ", d: "3 × 10-12" },
-    { a: "Curl ciocam (hammer)", b: "Curl la cablu", d: "3 × 10-12" },
-    { a: "Curl concentrat", b: "Curl cu gantere alternativ", d: "3 × 12" }
+    { a: "Împins la umeri cu bara", b: "Împins la umeri cu gantere", part: "compus", d: "4 × 6-10" },
+    { a: "Fluturări frontale", b: "Ridicare la bărbie", part: "anterior", d: "3 × 12-15" },
+    { a: "Fluturări laterale", b: "Fluturări la aparat lateral", part: "lateral", d: "3 × 12-15" },
+    { a: "Fluturări spate (rear delt)", b: "Fluturări spate la aparat", part: "posterior", d: "3 × 12-15" }
   ],
   rear: [
-    { a: "Fluturări spate (rear delt)", b: "Face pull la cablu", d: "3 × 12-15" },
-    { a: "Face pull la cablu", b: "Fluturări spate (rear delt)", d: "3 × 15" }
+    { a: "Face pull la cablu", b: "Fluturări spate (rear delt)", part: "posterior", d: "3 × 15" },
+    { a: "Fluturări spate la aparat", b: "Face pull la cablu", part: "posterior", d: "3 × 12-15" }
+  ],
+  triceps: [
+    { a: "Împins triceps la cablu (pushdown)", b: "Pushdown cu sfoară (rope)", part: "lateral", d: "3 × 10-15" },
+    { a: "Extensii cu gantera (peste cap)", b: "Extensii cu bara EZ (skull crusher)", part: "lung", d: "3 × 10-12" },
+    { a: "Dips (triceps)", b: "Flotări cu priză îngustă", part: "compus", d: "3 × 8-12" },
+    { a: "Kickback cu gantera", b: "Pushdown cu sfoară (rope)", part: "finisher", d: "3 × 12-15" }
+  ],
+  biceps: [
+    { a: "Curl cu bara", b: "Curl cu gantere alternativ", part: "scurt", d: "3 × 8-12" },
+    { a: "Curl înclinat pe bancă", b: "Curl predicăt (preacher)", part: "lung", d: "3 × 10-12" },
+    { a: "Curl ciocam (hammer)", b: "Curl la cablu", part: "brahial", d: "3 × 10-12" },
+    { a: "Curl concentrat", b: "Curl predicăt (preacher)", part: "finisher", d: "3 × 12" }
   ],
   quads: [
-    { a: "Genuflexiuni cu bara (squat)", b: "Genuflexiuni frontale cu bara", d: "4 × 6-10" },
-    { a: "Împins la presă (leg press)", b: "Fandări bulgărești (split squat)", d: "4 × 10-15" },
-    { a: "Fandări (lunges)", b: "Genuflexiuni la aparat (hack squat)", d: "3 × 10-12" },
-    { a: "Extensii cvadriceps", b: "Step-up pe bancă", d: "3 × 12-15" }
+    { a: "Genuflexiuni cu bara (squat)", b: "Genuflexiuni frontale cu bara", part: "compus", d: "4 × 6-10" },
+    { a: "Împins la presă (leg press)", b: "Genuflexiuni la aparat (hack squat)", part: "mijlociu", d: "4 × 10-15" },
+    { a: "Extensii cvadriceps", b: "Step-up pe bancă", part: "izolare", d: "3 × 12-15" },
+    { a: "Fandări (lunges)", b: "Fandări bulgărești (split squat)", part: "inferior", d: "3 × 10-12" },
+    { a: "Fandări mergând (walking lunges)", b: "Fandări bulgărești (split squat)", part: "finisher", d: "3 × 12-15" }
   ],
   hams: [
-    { a: "Îndreptări românești (RDL)", b: "Îndreptări cu bara (deadlift)", d: "4 × 8-12" },
-    { a: "Flexii biceps femural", b: "Îndreptări românești (RDL)", d: "3 × 12-15" }
+    { a: "Îndreptări românești (RDL)", b: "Îndreptări cu gantere", part: "compus", d: "4 × 8-12" },
+    { a: "Flexii femural culcat", b: "Flexii biceps femural", part: "izolare", d: "3 × 10-12" },
+    { a: "Flexii femural așezat", b: "Flexii femural culcat", part: "izolare", d: "3 × 12-15" },
+    { a: "Îndreptări cu bara (deadlift)", part: "finisher", d: "3 × 6-8" }
   ],
   glutes: [
-    { a: "Hip thrust", b: "Glute bridge cu bara", d: "3 × 8-12" },
-    { a: "Fandări invers", b: "Kickback la cablu", d: "3 × 10-12" },
-    { a: "Abducții la aparat", b: "Abducții cu bandă elastică", d: "3 × 15" }
+    { a: "Hip thrust", b: "Glute bridge cu bara", part: "compus", d: "4 × 8-12" },
+    { a: "Fandări invers", b: "Fandări bulgărești (split squat)", part: "mijlociu", d: "3 × 10-12" },
+    { a: "Kickback la cablu", b: "Hip thrust", part: "inferior", d: "3 × 12-15" },
+    { a: "Abducții la aparat", b: "Abducții cu bandă elastică", part: "lateral", d: "3 × 15" },
+    { a: "Genuflexiuni adânci (deep squat)", b: "Genuflexiuni cu bara (squat)", part: "finisher", d: "3 × 12-15" }
   ],
   calves: [
-    { a: "Ridicări pe gambe", d: "4 × 12-15" }
+    { a: "Ridicări pe gambe", part: "compus", d: "4 × 12-15" },
+    { a: "Ridicări pe gambe așezat", part: "izolare", d: "3 × 15-20" }
   ],
   core: [
-    { a: "Plank", b: "Dead bug", d: "3 × 30-60 sec" },
-    { a: "Ridicări de picioare", b: "Twist rusesc", d: "3 × 12-15" },
-    { a: "Dead bug", b: "Bird dog", d: "3 × 10" },
-    { a: "Bird dog", b: "Plank", d: "3 × 10" }
+    { a: "Abdomene (crunch)", b: "Abdomene la cablu", part: "superior", d: "3 × 15-20" },
+    { a: "Ridicări de picioare", b: "Ridicări de picioare atârnat", part: "inferior", d: "3 × 12-15" },
+    { a: "Twist rusesc", b: "Plank cu rotație", part: "oblice", d: "3 × 15" },
+    { a: "Plank", b: "Dead bug", part: "stabilizare", d: "3 × 30-60 sec" },
+    { a: "Dead bug", b: "Bird dog", part: "stabilizare", d: "3 × 10" },
+    { a: "Bird dog", b: "Plank", part: "stabilizare", d: "3 × 10" }
   ]
 };
 
 const SPLIT_TEMPLATES = {
   ul: {
-    Luni: ["chest", "back", "shoulders", "biceps", "triceps"],
-    Miercuri: ["quads", "hams", "glutes", "calves", "core"],
-    Joi: ["back", "chest", "shoulders", "triceps", "biceps"],
-    Vineri: ["quads", "glutes", "hams", "calves", "core"],
-    Sâmbătă: ["chest", "back", "shoulders", "core", "core"]
+    Luni: ["chest", "chest", "back", "back", "shoulders", "biceps", "triceps"],
+    Miercuri: ["quads", "quads", "hams", "glutes", "calves", "core", "core"],
+    Joi: ["back", "back", "chest", "chest", "shoulders", "triceps", "biceps"],
+    Vineri: ["quads", "quads", "glutes", "hams", "calves", "core", "core"],
+    Sâmbătă: ["chest", "back", "shoulders", "biceps", "triceps", "core", "core"]
   },
   arnold: {
-    Luni: ["chest", "chest", "back", "back", "shoulders"],
-    Miercuri: ["shoulders", "shoulders", "triceps", "biceps", "core"],
-    Joi: ["quads", "quads", "hams", "calves", "core"],
-    Vineri: ["chest", "back", "back", "shoulders", "triceps"],
-    Sâmbătă: ["biceps", "triceps", "shoulders", "core", "calves"]
+    Luni: ["chest", "chest", "chest", "back", "back", "back", "shoulders"],
+    Miercuri: ["shoulders", "shoulders", "triceps", "triceps", "biceps", "biceps", "core"],
+    Joi: ["quads", "quads", "quads", "hams", "hams", "calves", "core"],
+    Vineri: ["chest", "chest", "back", "back", "back", "shoulders", "triceps"],
+    Sâmbătă: ["biceps", "biceps", "triceps", "triceps", "shoulders", "core", "calves"]
   },
   full: {
-    Luni: ["chest", "back", "quads", "core", "calves"],
-    Miercuri: ["back", "shoulders", "hams", "glutes", "core"],
-    Joi: ["chest", "back", "quads", "biceps", "triceps"],
-    Vineri: ["shoulders", "back", "hams", "glutes", "core"],
-    Sâmbătă: ["quads", "glutes", "biceps", "core", "calves"]
+    Luni: ["chest", "back", "quads", "core", "calves", "shoulders", "hams"],
+    Miercuri: ["back", "shoulders", "hams", "glutes", "core", "chest", "calves"],
+    Joi: ["chest", "back", "quads", "biceps", "triceps", "core", "glutes"],
+    Vineri: ["shoulders", "back", "hams", "glutes", "core", "quads", "biceps"],
+    Sâmbătă: ["quads", "glutes", "biceps", "triceps", "core", "calves", "chest"]
   },
   bro: {
-    Luni: ["chest", "chest", "chest", "triceps", "triceps"],
-    Miercuri: ["back", "back", "back", "rear", "biceps"],
-    Joi: ["quads", "quads", "hams", "glutes", "calves"],
-    Vineri: ["shoulders", "shoulders", "rear", "triceps", "core"],
-    Sâmbătă: ["biceps", "biceps", "triceps", "triceps", "core"]
+    Luni: ["chest", "chest", "chest", "chest", "triceps", "triceps", "core"],
+    Miercuri: ["back", "back", "back", "back", "rear", "biceps", "biceps"],
+    Joi: ["quads", "quads", "quads", "hams", "glutes", "calves", "core"],
+    Vineri: ["shoulders", "shoulders", "shoulders", "rear", "rear", "triceps", "core"],
+    Sâmbătă: ["biceps", "biceps", "biceps", "triceps", "triceps", "triceps", "core"]
   },
   hl: {
-    Luni: ["chest", "back", "shoulders", "biceps", "triceps"],
-    Miercuri: ["quads", "hams", "glutes", "calves", "core"],
-    Joi: ["chest", "back", "shoulders", "triceps", "biceps"],
-    Vineri: ["quads", "hams", "glutes", "calves", "core"],
-    Sâmbătă: ["chest", "back", "shoulders", "core", "core"]
+    Luni: ["chest", "back", "shoulders", "biceps", "triceps", "core", "core"],
+    Miercuri: ["quads", "hams", "glutes", "calves", "core", "core", "back"],
+    Joi: ["chest", "back", "shoulders", "triceps", "biceps", "rear", "core"],
+    Vineri: ["quads", "hams", "glutes", "calves", "core", "core", "back"],
+    Sâmbătă: ["chest", "back", "shoulders", "biceps", "triceps", "core", "calves"]
   }
 };
+
+// ===== PPL: 3 parti ale grupei principale + 1 finisher compus =====
+const PPL_M = {
+  titles: {
+    Luni: "Luni — Push (piept: mijlociu, superior, inferior + fluturări)",
+    Miercuri: "Miercuri — Pull (spate: lățime, grosime, deadlift + pull-over)",
+    Joi: "Joi — Picioare A (cvadriceps complet + fesieri)",
+    Vineri: "Vineri — Umeri complet (4 părți) + piept secundar",
+    Sâmbătă: "Sâmbătă — Picioare B (femural complet) + fesieri + abdomen"
+  },
+  note: "Grupa principală: 3 exerciții pe părți + 1 finisher compus. Restul: izolare țintită.",
+  days: {
+    Luni: [
+      { c: "chest", p: "mijlociu" }, { c: "chest", p: "superior" }, { c: "chest", p: "inferior" }, { c: "chest", p: "finisher" },
+      { c: "shoulders", p: "compus" }, { c: "shoulders", p: "lateral" },
+      { c: "triceps", p: "lateral" }, { c: "triceps", p: "finisher" }
+    ],
+    Miercuri: [
+      { c: "back", p: "lățime" }, { c: "back", p: "grosime" }, { c: "back", p: "compus" }, { c: "back", p: "finisher" },
+      { c: "rear", p: "posterior" },
+      { c: "biceps", p: "scurt" }, { c: "biceps", p: "lung" }, { c: "biceps", p: "finisher" }
+    ],
+    Joi: [
+      { c: "quads", p: "compus" }, { c: "quads", p: "mijlociu" }, { c: "quads", p: "izolare" }, { c: "quads", p: "finisher" },
+      { c: "glutes", p: "compus" },
+      { c: "calves", p: "compus" }
+    ],
+    Vineri: [
+      { c: "shoulders", p: "compus" }, { c: "shoulders", p: "anterior" }, { c: "shoulders", p: "lateral" }, { c: "shoulders", p: "posterior" },
+      { c: "chest", p: "superior" }, { c: "chest", p: "finisher" },
+      { c: "triceps", p: "lung" }, { c: "triceps", p: "lateral" }
+    ],
+    Sâmbătă: [
+      { c: "hams", p: "compus" }, { c: "hams", p: "izolare" }, { c: "hams", p: "finisher" },
+      { c: "glutes", p: "compus" }, { c: "glutes", p: "lateral" },
+      { c: "calves", p: "izolare" },
+      { c: "core", p: "inferior" }, { c: "core", p: "oblice" }
+    ]
+  }
+};
+
+// PPL pentru fete: fesieri, picioare, abdomen, spate, umeri, brațe — uniform
+const PPL_F = {
+  titles: {
+    Luni: "Luni — Fesieri (4 părți) + femural",
+    Miercuri: "Miercuri — Spate (lățime + grosime + pull-over) + umeri + biceps",
+    Joi: "Joi — Cvadriceps + fesieri",
+    Vineri: "Vineri — Brațe complete (biceps + triceps) + umeri",
+    Sâmbătă: "Sâmbătă — Femural (4 părți) + fesieri + abdomen"
+  },
+  note: "Accent pe fesieri și picioare, cu spate/umeri/brațe echilibrate — creștere uniformă și armonioasă.",
+  days: {
+    Luni: [
+      { c: "glutes", p: "compus" }, { c: "glutes", p: "mijlociu" }, { c: "glutes", p: "inferior" }, { c: "glutes", p: "lateral" },
+      { c: "hams", p: "compus" }, { c: "hams", p: "izolare" },
+      { c: "calves", p: "compus" }
+    ],
+    Miercuri: [
+      { c: "back", p: "lățime" }, { c: "back", p: "grosime" }, { c: "back", p: "finisher" },
+      { c: "shoulders", p: "lateral" }, { c: "shoulders", p: "posterior" },
+      { c: "biceps", p: "scurt" }, { c: "biceps", p: "finisher" }
+    ],
+    Joi: [
+      { c: "quads", p: "compus" }, { c: "quads", p: "mijlociu" }, { c: "quads", p: "izolare" },
+      { c: "glutes", p: "compus" }, { c: "glutes", p: "lateral" },
+      { c: "calves", p: "compus" }, { c: "core", p: "inferior" }
+    ],
+    Vineri: [
+      { c: "biceps", p: "scurt" }, { c: "biceps", p: "lung" }, { c: "biceps", p: "finisher" },
+      { c: "triceps", p: "lateral" }, { c: "triceps", p: "lung" }, { c: "triceps", p: "finisher" },
+      { c: "shoulders", p: "lateral" }, { c: "shoulders", p: "anterior" }
+    ],
+    Sâmbătă: [
+      { c: "hams", p: "compus" }, { c: "hams", p: "izolare" }, { c: "hams", p: "izolare" }, { c: "hams", p: "finisher" },
+      { c: "glutes", p: "compus" }, { c: "glutes", p: "inferior" },
+      { c: "core", p: "superior" }, { c: "core", p: "oblice" }
+    ]
+  }
+};
+
+function buildPPL(tmpl) {
+  const block = weekInfo().block;
+  const cursors = {};
+  const out = {};
+  Object.keys(tmpl.days).forEach(day => {
+    const exs = tmpl.days[day].map(({ c, p }) => {
+      const pool = (POOL[c] || []).filter(it => it.part === p);
+      if (!pool.length) return null;
+      const ck = c + '|' + p;
+      cursors[ck] = cursors[ck] || 0;
+      const pick = pool[(block + cursors[ck]) % pool.length];
+      cursors[ck]++;
+      return { a: pick.a, b: pick.b, d: pick.d };
+    }).filter(Boolean);
+    out[day] = { title: tmpl.titles[day], note: tmpl.note, exercises: exs };
+  });
+  return out;
+}
 
 const SPLIT_TITLES = {
   ul: { Luni: "Upper A (piept, spate, umeri)", Miercuri: "Lower A (picioare)", Joi: "Upper B", Vineri: "Lower B", Sâmbătă: "Full Body ușor + Core" },
@@ -409,8 +539,10 @@ function getTraining() {
   if (!p) return TRAINING_M;
   const key = p.split || defaultSplit(p.goal);
   if (key === 'custom') return buildCustom();
-  if (key === 'ppl' || !SPLIT_TEMPLATES[key]) {
-    // PPL foloseste programele detaliate (cu varianta feminina)
+  if (key === 'ppl') {
+    return p.sex === 'f' ? buildPPL(PPL_F) : buildPPL(PPL_M);
+  }
+  if (!SPLIT_TEMPLATES[key]) {
     return p.sex === 'f' ? TRAINING_F : TRAINING_M;
   }
   return buildProgram(key, p);
@@ -1264,9 +1396,11 @@ document.getElementById('btn-weight').addEventListener('click', () => {
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
-  if (confirm('Ștergi toate datele (profil, istoric, mese, antrenamente)?')) {
-    localStorage.clear(); showSetup(); toast('Date șterse.');
-  }
+  appConfirm('Ștergi toate datele (profil, istoric, mese, antrenamente)?', (ok) => {
+    if (ok) {
+      localStorage.clear(); showSetup(); toast('Date șterse.');
+    }
+  });
 });
 
 document.getElementById('btn-edit-profile').addEventListener('click', () => {
@@ -1309,17 +1443,20 @@ document.getElementById('btn-custom-done').addEventListener('click', () => {
 });
 
 document.getElementById('btn-custom-add-day').addEventListener('click', () => {
-  const raw = prompt('Ziua (scrie una din): ' + DOW.join(', '), 'Luni');
-  if (!raw) return;
-  const day = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
-  if (!DOW.includes(day)) { toast('Ziua nu e validă — scrie ex: Luni'); return; }
-  const cp = getCustomProgram();
-  if (cp[day]) { toast('Ziua există deja — șterge-o întâi dacă vrei să o refaci'); return; }
-  const title = prompt('Titlul zilei (ex: Picioare grele):', day + ' — antrenamentul meu');
-  cp[day] = { title: (title && title.trim()) || (day + ' — antrenamentul meu'), exercises: [] };
-  setCustomProgram(cp);
-  renderCustomEditor();
-  toast('Zi adăugată! Acum adaugă exerciții.');
+  appPrompt('Ziua (scrie una din): ' + DOW.join(', '), 'Luni', (raw) => {
+    if (!raw) return;
+    const day = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
+    if (!DOW.includes(day)) { toast('Ziua nu e validă — scrie ex: Luni'); return; }
+    const cp = getCustomProgram();
+    if (cp[day]) { toast('Ziua există deja — șterge-o întâi dacă vrei să o refaci'); return; }
+    appPrompt('Titlul zilei (ex: Picioare grele):', day + ' — antrenamentul meu', (title) => {
+      const cp = getCustomProgram();
+      cp[day] = { title: (title && title.trim()) || (day + ' — antrenamentul meu'), exercises: [] };
+      setCustomProgram(cp);
+      renderCustomEditor();
+      toast('Zi adăugată! Acum adaugă exerciții.');
+    });
+  });
 });
 
 document.getElementById('btn-cal-size').addEventListener('click', () => {
@@ -1361,12 +1498,13 @@ document.addEventListener('click', (ev) => {
   if (renBtn) {
     const key = renBtn.dataset.key;
     const cur = displayName(key);
-    const nn = prompt('Noul nume al exercițiului (aparatul tău din sală):', cur);
-    if (nn !== null && nn.trim()) {
-      setRename(key, nn.trim());
-      renderTraining(); renderToday();
-      toast('Exercițiu redenumit ✏️');
-    }
+    appPrompt('Noul nume al exercițiului (aparatul tău din sală):', cur, (nn) => {
+      if (nn && nn.trim()) {
+        setRename(key, nn.trim());
+        renderTraining(); renderToday();
+        toast('Exercițiu redenumit ✏️');
+      }
+    });
     return;
   }
   const chatRow = ev.target.closest('.chat-room-row');
@@ -1380,15 +1518,16 @@ document.addEventListener('click', (ev) => {
   const ceAdd = ev.target.closest('.ce-add-ex');
   if (ceAdd) {
     const day = ceAdd.dataset.day;
-    const v = prompt('Exercițiul (nume | serii × repetări):', 'Împins din piept cu bara | 4 × 8-12');
-    if (!v) return;
-    const parts = v.split('|').map(x => x.trim());
-    const cp = getCustomProgram();
-    if (!cp[day]) return;
-    cp[day].exercises.push({ a: parts[0] || 'Exercițiu', d: parts[1] || '3 × 10' });
-    setCustomProgram(cp);
-    renderCustomEditor();
-    toast('Exercițiu adăugat!');
+    appPrompt('Exercițiul (nume | serii × repetări):', 'Împins din piept cu bara | 4 × 8-12', (v) => {
+      if (!v) return;
+      const parts = v.split('|').map(x => x.trim());
+      const cp = getCustomProgram();
+      if (!cp[day]) return;
+      cp[day].exercises.push({ a: parts[0] || 'Exercițiu', d: parts[1] || '3 × 10' });
+      setCustomProgram(cp);
+      renderCustomEditor();
+      toast('Exercițiu adăugat!');
+    });
     return;
   }
   const ceDelEx = ev.target.closest('.ce-del-ex');
@@ -1396,37 +1535,47 @@ document.addEventListener('click', (ev) => {
     const day = ceDelEx.dataset.day;
     const i = parseInt(ceDelEx.dataset.i);
     const cp = getCustomProgram();
-    if (cp[day] && cp[day].exercises[i] && confirm('Ștergi „' + cp[day].exercises[i].a + '"?')) {
-      cp[day].exercises.splice(i, 1);
-      setCustomProgram(cp);
-      renderCustomEditor();
-      toast('Șters!');
-    }
+    if (!cp[day] || !cp[day].exercises[i]) return;
+    appConfirm('Ștergi „' + cp[day].exercises[i].a + '"?', (ok) => {
+      if (ok) {
+        const cp = getCustomProgram();
+        cp[day].exercises.splice(i, 1);
+        setCustomProgram(cp);
+        renderCustomEditor();
+        toast('Șters!');
+      }
+    });
     return;
   }
   const ceRenDay = ev.target.closest('.ce-ren-day');
   if (ceRenDay) {
     const day = ceRenDay.dataset.day;
     const cp = getCustomProgram();
-    const t = prompt('Titlul zilei:', cp[day] ? cp[day].title : day);
-    if (t && t.trim() && cp[day]) {
-      cp[day].title = t.trim();
-      setCustomProgram(cp);
-      renderCustomEditor();
-      toast('Titlu schimbat!');
-    }
+    appPrompt('Titlul zilei:', cp[day] ? cp[day].title : day, (t) => {
+      if (t && t.trim()) {
+        const cp = getCustomProgram();
+        if (cp[day]) {
+          cp[day].title = t.trim();
+          setCustomProgram(cp);
+          renderCustomEditor();
+          toast('Titlu schimbat!');
+        }
+      }
+    });
     return;
   }
   const ceDelDay = ev.target.closest('.ce-del-day');
   if (ceDelDay) {
     const day = ceDelDay.dataset.day;
-    const cp = getCustomProgram();
-    if (cp[day] && confirm('Ștergi ziua ' + day + ' (cu toate exercițiile)?')) {
-      delete cp[day];
-      setCustomProgram(cp);
-      renderCustomEditor();
-      toast('Zi ștearsă!');
-    }
+    appConfirm('Ștergi ziua ' + day + ' (cu toate exercițiile)?', (ok) => {
+      if (ok) {
+        const cp = getCustomProgram();
+        delete cp[day];
+        setCustomProgram(cp);
+        renderCustomEditor();
+        toast('Zi ștearsă!');
+      }
+    });
     return;
   }
   const calDay = ev.target.closest('.cal-g[data-ds]');
@@ -1449,12 +1598,16 @@ document.addEventListener('click', (ev) => {
   if (mealDel) {
     const i = parseInt(mealDel.dataset.i);
     const { all, today } = getLog();
-    if (today.meals[i] && confirm('Ștergi „' + today.meals[i].name + '"?')) {
-      today.meals.splice(i, 1);
-      saveLog(all);
-      renderMeals(); renderToday();
-      toast('Șters!');
-    }
+    if (!today.meals[i]) return;
+    appConfirm('Ștergi „' + today.meals[i].name + '"?', (ok) => {
+      if (ok) {
+        const { all, today } = getLog();
+        today.meals.splice(i, 1);
+        saveLog(all);
+        renderMeals(); renderToday();
+        toast('Șters!');
+      }
+    });
     return;
   }
   const mealEdit = ev.target.closest('.meal-edit');
@@ -1463,22 +1616,27 @@ document.addEventListener('click', (ev) => {
     const { all, today } = getLog();
     const m = today.meals[i];
     if (!m) return;
-    const v = prompt('Editează: nume | kcal | proteine | carbo | grăsimi', `${m.name} | ${m.calories} | ${m.protein} | ${m.carbs} | ${m.fat}`);
-    if (v !== null) {
-      const parts = v.split('|').map(x => x.trim());
-      if (parts.length >= 5 && parts[0]) {
-        m.name = parts[0];
-        m.calories = parseFloat(parts[1]) || 0;
-        m.protein = parseFloat(parts[2]) || 0;
-        m.carbs = parseFloat(parts[3]) || 0;
-        m.fat = parseFloat(parts[4]) || 0;
-        saveLog(all);
-        renderMeals(); renderToday();
-        toast('Actualizat!');
-      } else {
-        toast('Format: nume | kcal | proteine | carbo | grăsimi');
+    appPrompt('Editează: nume | kcal | proteine | carbo | grăsimi', `${m.name} | ${m.calories} | ${m.protein} | ${m.carbs} | ${m.fat}`, (v) => {
+      if (v !== null) {
+        const parts = v.split('|').map(x => x.trim());
+        if (parts.length >= 5 && parts[0]) {
+          const { all, today } = getLog();
+          const m = today.meals[i];
+          if (m) {
+            m.name = parts[0];
+            m.calories = parseFloat(parts[1]) || 0;
+            m.protein = parseFloat(parts[2]) || 0;
+            m.carbs = parseFloat(parts[3]) || 0;
+            m.fat = parseFloat(parts[4]) || 0;
+            saveLog(all);
+            renderMeals(); renderToday();
+            toast('Actualizat!');
+          }
+        } else {
+          toast('Format: nume | kcal | proteine | carbo | grăsimi');
+        }
       }
-    }
+    });
     return;
   }
   const ytBtn = ev.target.closest('.ex-yt');
@@ -1503,6 +1661,41 @@ document.addEventListener('click', (ev) => {
     toggleExLog(key);
     toast(`${displayName(key)}: ${w}kg × ${r} salvat!`);
   }
+});
+
+// ===== Fereastra de dialog (înlocuiește prompt/confirm — nu merg pe Android) =====
+let modalCb = null;
+let modalIsConfirm = false;
+function openModal(msg, def, isConfirm, cb) {
+  document.getElementById('modal-msg').textContent = msg;
+  const inp = document.getElementById('modal-input');
+  inp.classList.toggle('hidden', isConfirm);
+  if (!isConfirm) inp.value = def || '';
+  document.getElementById('modal-ok').textContent = isConfirm ? 'Da' : 'OK';
+  document.getElementById('modal').classList.remove('hidden');
+  modalIsConfirm = isConfirm;
+  modalCb = cb;
+  if (!isConfirm) setTimeout(() => inp.focus(), 100);
+}
+function appPrompt(msg, def, cb) { openModal(msg, def, false, cb); }
+function appConfirm(msg, cb) { openModal(msg, '', true, cb); }
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  modalCb = null;
+}
+document.getElementById('modal-ok').addEventListener('click', () => {
+  const cb = modalCb;
+  const val = modalIsConfirm ? true : document.getElementById('modal-input').value.trim();
+  closeModal();
+  if (cb) cb(val);
+});
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  const cb = modalCb;
+  closeModal();
+  if (cb) cb(modalIsConfirm ? false : null);
+});
+document.getElementById('modal-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('modal-ok').click();
 });
 
 // ===== Zile consecutive (streak) =====
@@ -1543,18 +1736,19 @@ function chatCreate() {
   const name = document.getElementById('chat-name').value.trim();
   if (name) c.name = name;
   if (!c.name) { toast('Scrie mai întâi numele tău'); return; }
-  const title = prompt('Numele camerei (ex: Camera comună / Privat — Ana):', 'Camera comună');
-  if (!title || !title.trim()) return;
-  const code = randCode();
-  const body = JSON.stringify({ title: title.trim(), msgs: [] });
-  fetch(CHAT_URL(code), { method: 'POST', body: body }).then(r => {
-    if (!r.ok) throw new Error('eroare');
-    c.rooms.push({ code: code, title: title.trim() });
-    c.active = code;
-    setChat(c);
-    openRoomChat();
-    toast('Cameră creată! Cod: ' + code);
-  }).catch(() => toast('Nu am putut crea camera, încearcă din nou'));
+  appPrompt('Numele camerei (ex: Camera comună / Privat — Ana):', 'Camera comună', (title) => {
+    if (!title || !title.trim()) return;
+    const code = randCode();
+    const body = JSON.stringify({ title: title.trim(), msgs: [] });
+    fetch(CHAT_URL(code), { method: 'POST', body: body }).then(r => {
+      if (!r.ok) throw new Error('eroare');
+      c.rooms.push({ code: code, title: title.trim() });
+      c.active = code;
+      setChat(c);
+      openRoomChat();
+      toast('Cameră creată! Cod: ' + code);
+    }).catch(() => toast('Nu am putut crea camera, încearcă din nou'));
+  });
 }
 
 function chatJoin() {
