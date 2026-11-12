@@ -438,9 +438,10 @@ const PPL_F = {
   }
 };
 
-function buildPPL(tmpl) {
+function buildPPL(tmpl, isFemale) {
   const block = weekInfo().block;
   const cursors = {};
+  const UPPER = ['chest', 'shoulders', 'back', 'biceps', 'triceps', 'rear'];
   const out = {};
   Object.keys(tmpl.days).forEach(day => {
     const exs = tmpl.days[day].map(({ c, p }) => {
@@ -450,7 +451,8 @@ function buildPPL(tmpl) {
       cursors[ck] = cursors[ck] || 0;
       const pick = pool[(block + cursors[ck]) % pool.length];
       cursors[ck]++;
-      return { a: pick.a, b: pick.b, d: pick.d };
+      const d = (isFemale && UPPER.includes(c)) ? '3 × 12-15' : pick.d;
+      return { a: pick.a, b: pick.b, d: d };
     }).filter(Boolean);
     out[day] = { title: tmpl.titles[day], note: tmpl.note, exercises: exs };
   });
@@ -489,15 +491,18 @@ function buildProgram(key, p) {
   Object.keys(tmpl).forEach(day => {
     let cats = tmpl[day].slice();
     if (p.sex === 'f') {
-      // accent pe fesieri la fete: excedentul de piept/brațe devine fesieri/core
-      let chestCount = 0, bicepCount = 0, triCount = 0;
+      // Program feminin: fesieri/picioare principale; tren superior limitat la tonifiere
+      let chestCount = 0, bicepCount = 0, triCount = 0, shoulderCount = 0, backCount = 0;
       cats = cats.map(c => {
-        if (c === 'chest') { chestCount++; if (chestCount > 1) return 'glutes'; }
-        if (c === 'biceps') { bicepCount++; if (bicepCount > 1) return 'core'; }
-        if (c === 'triceps') { triCount++; if (triCount > 1) return 'core'; }
+        if (c === 'chest') { chestCount++; return chestCount > 1 ? 'glutes' : c; }
+        if (c === 'biceps') { bicepCount++; return bicepCount > 1 ? 'core' : c; }
+        if (c === 'triceps') { triCount++; return triCount > 1 ? 'core' : c; }
+        if (c === 'shoulders') { shoulderCount++; return shoulderCount > 2 ? 'glutes' : c; }
+        if (c === 'back') { backCount++; return backCount > 2 ? 'core' : c; }
         return c;
       });
     }
+    const UPPER = ['chest', 'shoulders', 'back', 'biceps', 'triceps', 'rear'];
     const exs = cats.map(cat => {
       const pool = POOL[cat] || [];
       if (!pool.length) return null;
@@ -505,14 +510,18 @@ function buildProgram(key, p) {
       const idx = (block + catCursor[cat]) % pool.length;
       catCursor[cat]++;
       const pick = pool[idx];
-      return { a: pick.a, b: pick.b, d: pick.d };
+      const d = (p.sex === 'f' && UPPER.includes(cat)) ? '3 × 12-15' : pick.d;
+      return { a: pick.a, b: pick.b, d: d };
     }).filter(Boolean);
     const goalNote = p.goal === 'cut'
       ? 'Slăbire: menține greutățile, odihnă 60-90 sec, la final 10-15 min cardio ușor.'
       : p.goal === 'bulk'
         ? 'Masă: supraîncărcare progresivă — când faci toate reps, +1-2 kg data viitoare.'
         : 'Menținere: formă bună, greutăți constante, plăcere.';
-    out[day] = { title: day + " — " + titles[day], note: goalNote, exercises: exs };
+    const femNote = p.sex === 'f'
+      ? ' Program feminin: fesieri și picioare sunt principale; trenul superior în tonifiere (12-15 reps, greutăți moderate) — contur frumos, fără masă.'
+      : '';
+    out[day] = { title: day + " — " + titles[day], note: goalNote + femNote, exercises: exs };
   });
   return out;
 }
@@ -540,7 +549,7 @@ function getTraining() {
   const key = p.split || defaultSplit(p.goal);
   if (key === 'custom') return buildCustom();
   if (key === 'ppl') {
-    return p.sex === 'f' ? buildPPL(PPL_F) : buildPPL(PPL_M);
+    return p.sex === 'f' ? buildPPL(PPL_F, true) : buildPPL(PPL_M, false);
   }
   if (!SPLIT_TEMPLATES[key]) {
     return p.sex === 'f' ? TRAINING_F : TRAINING_M;
@@ -1048,7 +1057,21 @@ function warmupHTML(dayData) {
   </div>`;
 }
 
-const EX_TABLE_HEAD = `<div class="ex-table-head"><span class="th-yt">▶️</span><span>Exercițiu · Serii</span><span class="th-add">➕</span><span class="th-ren">✏️</span></div>`;
+const EX_TABLE_HEAD = `<div class="ex-table-head"><span class="th-yt">▶️</span><span>Exercițiu · Serii</span><span class="th-swap">🔄</span><span class="th-add">➕</span><span class="th-ren">✏️</span></div>`;
+
+function swapExercise(key) {
+  const cat = catOfExercise(key);
+  if (!cat) return null;
+  const cur = displayName(key);
+  const candidates = [];
+  POOL[cat].forEach(it => {
+    [it.a, it.b].forEach(n => {
+      if (n && n !== cur && n !== key && !candidates.includes(n)) candidates.push(n);
+    });
+  });
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
 
 function toggleExLog(key) {
   const logs = document.querySelectorAll(`.ex-log[data-key="${CSS.escape(key)}"]`);
@@ -1068,9 +1091,17 @@ function exerciseHTML(slot) {
   const label = displayName(key);
   const log = getExLog()[key] || [];
   const last = lastSet(key);
-  const hist = [...log].slice(-3).reverse().map(s =>
-    `<div class="log-entry">${fmtDate(s.date)} — <b>${s.weight}kg × ${s.reps}</b></div>`
-  ).join('');
+  const today = log.filter(s => s.date === todayKey());
+  const older = log.filter(s => s.date !== todayKey()).slice(-4).reverse();
+  let hist = '';
+  if (today.length) {
+    hist += today.map((s, i) => `<div class="log-entry">Seria ${i + 1} — <b>${s.weight}kg × ${s.reps}</b></div>`).join('');
+  }
+  if (older.length) {
+    hist += '<div class="meal-meta" style="margin-top:4px;">Zile trecute:</div>' + older.map(s =>
+      `<div class="log-entry">${fmtDate(s.date)} — <b>${s.weight}kg × ${s.reps}</b></div>`
+    ).join('');
+  }
   const tips = TIPS[key] ? `<div class="ex-tips">💡 ${TIPS[key]}</div>` : '';
   const info = weekInfo();
   const del = info.deload ? ' · <span class="dl">descărcare: -10% kg</span>' : '';
@@ -1081,6 +1112,7 @@ function exerciseHTML(slot) {
         <div class="ex-name">${esc(label)}</div>
         <div class="ex-detail">${esc(slot.d)}${last ? ' · <b>ultimul: ' + last.weight + 'kg × ' + last.reps + '</b>' : ''}${del}</div>
       </div>
+      <button class="ex-swap" data-key="${esc(key)}" title="Schimbă cu alt exercițiu pe același mușchi (dacă aparatul e ocupat)">🔄</button>
       <button class="ex-add" data-key="${esc(key)}" title="Adaugă kg și repetări">➕</button>
       <button class="ex-rename" data-key="${esc(key)}" title="Redenumește exercițiul">✏️</button>
     </div>
@@ -1091,7 +1123,7 @@ function exerciseHTML(slot) {
         <input type="number" class="log-reps" inputmode="numeric" placeholder="reps" />
         <button class="log-add">➕</button>
       </div>
-      <div class="log-history">${hist || '<div class="meal-meta">Nicio serie salvată încă.</div>'}</div>
+      <div class="log-history">${hist || '<div class="meal-meta">Nicio serie încă. Poți adăuga oricâte serii vrei.</div>'}</div>
     </div>
   </div>`;
 }
@@ -1146,7 +1178,7 @@ function renderTraining() {
     return h;
   }).join('');
   html += '<div class="note">➜ Marțea: fotbal / odihnă activă. Duminica: cardio opțional.</div>';
-  html += '<div class="note">▶️ = filmare YouTube Shorts · ➕ (sau click pe exercițiu) = adaugă kg × reps · ✏️ = redenumește aparatul din sala ta.</div>';
+  html += '<div class="note">▶️ = filmare YouTube Shorts · 🔄 = schimbă exercițiul cu altul pe același mușchi · ➕ (sau click) = adaugă kg × reps · ✏️ = redenumește.</div>';
   html += '<div class="note">🔄 La fiecare 4 săptămâni exercițiile se schimbă automat (varianta A ↔ B).</div>';
 
   html += '<h3 class="section-h">🧘 Stretching (după antrenament)</h3>';
@@ -1643,6 +1675,19 @@ document.addEventListener('click', (ev) => {
   if (ytBtn) {
     const key = ytBtn.dataset.key;
     window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(displayName(key)) + '&sp=EgIYAQ%3D%3D', '_blank');
+    return;
+  }
+  const swapBtn = ev.target.closest('.ex-swap');
+  if (swapBtn) {
+    const key = swapBtn.dataset.key;
+    const alt = swapExercise(key);
+    if (alt) {
+      setRename(key, alt);
+      renderTraining(); renderToday();
+      toast('Schimbat: ' + alt + ' (același mușchi)');
+    } else {
+      toast('Nu am altă variantă — redenumește-l cu ✏️');
+    }
     return;
   }
   const exAdd = ev.target.closest('.ex-add');
